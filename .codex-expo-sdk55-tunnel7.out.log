@@ -1,9 +1,0 @@
-env: load .env.local
-env: export EXPO_PUBLIC_ANDROID_PACKAGE EXPO_PUBLIC_APP_SCHEME EXPO_PUBLIC_IOS_BUNDLE_IDENTIFIER EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY EXPO_PUBLIC_SUPABASE_URL
-Starting project at C:\Projects\Authentic
-Starting Metro Bundler
-
-Tunnel connected.
-Tunnel ready.
-Waiting on http://localhost:8083
-Logs for your project will appear below.

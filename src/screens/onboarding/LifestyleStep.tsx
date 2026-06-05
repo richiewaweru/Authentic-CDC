@@ -10,9 +10,14 @@ import { lifestyleVisions, sharedActivities } from './options';
 interface LifestyleStepProps {
   data: OnboardingData;
   updateData: (payload: Partial<OnboardingData>) => void;
+  validationMessage?: string | null;
 }
 
-export function LifestyleStep({ data, updateData }: LifestyleStepProps) {
+export function LifestyleStep({
+  data,
+  updateData,
+  validationMessage,
+}: LifestyleStepProps) {
   const toggleActivity = (value: string) => {
     const nextValues = data.sharedActivities.includes(value)
       ? data.sharedActivities.filter((item) => item !== value)
@@ -27,6 +32,7 @@ export function LifestyleStep({ data, updateData }: LifestyleStepProps) {
       <Text style={styles.subtitle}>
         Share the rhythms, community, and experiences you hope to build.
       </Text>
+      {validationMessage ? <Text style={styles.validation}>{validationMessage}</Text> : null}
       <View style={styles.section}>
         <Text style={styles.label}>WHAT FUTURE LIFESTYLE VISION FEELS CLOSEST TO YOU?</Text>
         <SingleSelect
@@ -58,6 +64,10 @@ const styles = StyleSheet.create({
   subtitle: {
     ...typography.bodyMd,
     color: colors.onSurfaceVariant,
+  },
+  validation: {
+    ...typography.bodySm,
+    color: colors.error,
   },
   section: {
     gap: spacing.sm,

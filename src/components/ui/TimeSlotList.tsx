@@ -20,6 +20,9 @@ export function TimeSlotList({ slots, selectedSlotId, onSelect }: TimeSlotListPr
           <TouchableOpacity
             key={slot.id}
             activeOpacity={0.9}
+            accessibilityLabel={slot.time}
+            accessibilityRole="radio"
+            accessibilityState={{ selected }}
             onPress={() => onSelect(slot)}
             style={[styles.button, selected && styles.selected]}
           >

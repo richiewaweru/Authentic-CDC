@@ -6,17 +6,20 @@ import { colors, sizes, spacing, typography } from '../../theme';
 import { ProgressBar } from './ProgressBar';
 
 interface ScreenHeaderProps {
+  eyebrow?: string;
   stepLabel?: string;
   onBack?: () => void;
   progress?: number;
 }
 
-export function ScreenHeader({ stepLabel, onBack, progress }: ScreenHeaderProps) {
+export function ScreenHeader({ eyebrow, stepLabel, onBack, progress }: ScreenHeaderProps) {
   return (
     <View style={styles.wrapper}>
       <View style={styles.row}>
         <TouchableOpacity
           accessibilityLabel="Go back"
+          accessibilityRole="button"
+          accessibilityState={{ disabled: !onBack }}
           disabled={!onBack}
           onPress={onBack}
           style={styles.backButton}
@@ -24,6 +27,7 @@ export function ScreenHeader({ stepLabel, onBack, progress }: ScreenHeaderProps)
           {onBack ? <Ionicons name="arrow-back" size={22} color={colors.primary} /> : null}
         </TouchableOpacity>
         <View style={styles.center}>
+          {eyebrow ? <Text style={styles.eyebrow}>{eyebrow}</Text> : null}
           {stepLabel ? <Text style={styles.stepLabel}>{stepLabel}</Text> : null}
         </View>
         <View style={styles.backButton} />
@@ -55,6 +59,12 @@ const styles = StyleSheet.create({
   center: {
     flex: 1,
     alignItems: 'center',
+    gap: spacing.xs,
+  },
+  eyebrow: {
+    ...typography.labelSm,
+    color: colors.goldDark,
+    textTransform: 'uppercase',
   },
   stepLabel: {
     ...typography.labelSm,

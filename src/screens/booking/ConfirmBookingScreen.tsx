@@ -6,8 +6,10 @@ import { BookingSummary } from '../../components/ui/BookingSummary';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { ScreenHeader } from '../../components/ui/ScreenHeader';
+import { CONFIRMATION_FEE } from '../../constants/fees';
 import { confirmMockPayment } from '../../mocks/payment';
 import { BookingStackParamList } from '../../navigation/types';
+import { bookSlot } from '../../services/slotService';
 import { useAuthStore } from '../../stores/authStore';
 import { colors, spacing, typography } from '../../theme';
 
@@ -20,7 +22,10 @@ export function ConfirmBookingScreen({ navigation }: Props) {
 
   const handlePay = async () => {
     if (!selection) {
-      Alert.alert('No booking selected', 'Choose a slot before confirming.');
+      Alert.alert(
+        'No time selected',
+        'Choose an Alignment Conversation time before confirming your place.',
+      );
       navigation.navigate('ChooseSlot');
       return;
     }
@@ -28,11 +33,14 @@ export function ConfirmBookingScreen({ navigation }: Props) {
     setLoading(true);
 
     try {
+      // TODO: Replace the mock confirmation call with the real payment provider flow.
       const booking = await confirmMockPayment(selection);
+      await bookSlot(selection.slot.id);
       confirmBooking(booking);
       navigation.navigate('BookingConfirmed');
     } catch (error) {
-      Alert.alert('Payment could not be completed', 'Please try again.');
+      console.error('Confirmation Fee processing failed:', error);
+      Alert.alert('Confirmation Fee could not be processed', 'Please try again.');
     } finally {
       setLoading(false);
     }
@@ -41,42 +49,52 @@ export function ConfirmBookingScreen({ navigation }: Props) {
   if (!selection) {
     return (
       <View style={styles.screen}>
-        <Text style={styles.headline}>Confirm Your Alignment Conversation</Text>
-        <Text style={styles.subtitle}>Choose a time first so we can confirm your booking.</Text>
-        <Button onPress={() => navigation.navigate('ChooseSlot')} title="Choose a Slot" />
+        <Text style={styles.headline}>Confirm Your Place</Text>
+        <Text style={styles.subtitle}>
+          Choose an Alignment Conversation time first so we can confirm your place.
+        </Text>
+        <Button onPress={() => navigation.navigate('ChooseSlot')} title="Choose a Time" />
       </View>
     );
   }
 
   return (
     <View style={styles.screen}>
-      <ScreenHeader onBack={() => navigation.goBack()} progress={0.2} stepLabel="STEP 1 OF 5" />
+      <ScreenHeader
+        onBack={() => navigation.goBack()}
+        progress={0.75}
+        stepLabel="Confirm Your Place"
+      />
       <View style={styles.content}>
         <View style={styles.copy}>
-          <Text style={styles.headline}>Confirm Your Alignment Conversation</Text>
-          <Text style={styles.subtitle}>
-            A $10 Alignment Conversation fee helps us reserve guide time, reduce no-shows, and keep
-            the community intentional.
-          </Text>
+          <Text style={styles.headline}>Confirm Your Place</Text>
+          <Text style={styles.subtitle}>{CONFIRMATION_FEE.description}</Text>
         </View>
 
         <BookingSummary booking={selection} />
 
         <Card style={styles.summaryCard}>
-          <Text style={styles.sectionTitle}>PAYMENT SUMMARY</Text>
+          <Text style={styles.sectionTitle}>CONFIRMATION SUMMARY</Text>
           <View style={styles.row}>
-            <Text style={styles.rowLabel}>Alignment Conversation Fee</Text>
-            <Text style={styles.rowValue}>$10.00</Text>
+            <Text style={styles.rowLabel}>Confirmation Fee</Text>
+            <Text style={styles.rowValue}>{CONFIRMATION_FEE.label}</Text>
           </View>
           <View style={styles.row}>
             <Text style={styles.totalLabel}>Total Due</Text>
-            <Text style={styles.totalLabel}>$10.00</Text>
+            <Text style={styles.totalLabel}>{CONFIRMATION_FEE.label}</Text>
           </View>
           <Text style={styles.footer}>Secure checkout powered by Stripe</Text>
         </Card>
       </View>
 
-      <Button loading={loading} onPress={() => void handlePay()} title="Pay & Confirm Booking ->" />
+      <View style={styles.footerActions}>
+        <Button
+          onPress={() => navigation.navigate('ChooseSlot')}
+          title="Change Time"
+          variant="outlined"
+        />
+        <Button loading={loading} onPress={() => void handlePay()} title="Pay Confirmation Fee" />
+      </View>
     </View>
   );
 }
@@ -132,5 +150,8 @@ const styles = StyleSheet.create({
   footer: {
     ...typography.bodySm,
     color: colors.outline,
+  },
+  footerActions: {
+    gap: spacing.md,
   },
 });

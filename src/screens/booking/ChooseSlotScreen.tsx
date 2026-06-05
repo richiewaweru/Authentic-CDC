@@ -1,17 +1,18 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { Button } from '../../components/ui/Button';
 import { DatePicker } from '../../components/ui/DatePicker';
 import { GuideCard } from '../../components/ui/GuideCard';
 import { ScreenHeader } from '../../components/ui/ScreenHeader';
+import { SkeletonBlock } from '../../components/ui/SkeletonBlock';
 import { TimeSlotList } from '../../components/ui/TimeSlotList';
-import { mockSupabase } from '../../mocks/supabase';
 import { BookingStackParamList } from '../../navigation/types';
+import { fetchAvailableSlots, fetchGuides } from '../../services/slotService';
 import { useAuthStore } from '../../stores/authStore';
 import { Guide, Slot } from '../../types/booking';
-import { colors, spacing, typography } from '../../theme';
+import { colors, radii, spacing, typography } from '../../theme';
 
 type Props = NativeStackScreenProps<BookingStackParamList, 'ChooseSlot'>;
 
@@ -27,18 +28,22 @@ export function ChooseSlotScreen({ navigation }: Props) {
     let mounted = true;
 
     const load = async () => {
-      const [guideResults, slotResults] = await Promise.all([
-        mockSupabase.guides.list(),
-        mockSupabase.slots.list(),
-      ]);
+      try {
+        const guideResults = await fetchGuides();
+        const firstGuide = guideResults[0];
+        const slotResults = firstGuide ? await fetchAvailableSlots(firstGuide.id) : [];
 
-      if (!mounted) {
-        return;
+        if (!mounted) {
+          return;
+        }
+
+        setGuides(guideResults);
+        setSlots(slotResults);
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
       }
-
-      setGuides(guideResults);
-      setSlots(slotResults);
-      setLoading(false);
     };
 
     void load();
@@ -76,19 +81,45 @@ export function ChooseSlotScreen({ navigation }: Props) {
 
   if (loading) {
     return (
-      <View style={styles.loader}>
-        <ActivityIndicator color={colors.primary} size="large" />
+      <View style={styles.screen}>
+        <ScreenHeader progress={0.5} stepLabel="Alignment Conversation" />
+        <View style={styles.content} testID="choose-slot-skeleton">
+          <View style={styles.copy}>
+            <SkeletonBlock height={24} width="60%" />
+            <SkeletonBlock height={16} width="80%" />
+          </View>
+          <SkeletonBlock height={72} borderRadius={radii.card} />
+          <View style={styles.dateSkeletonRow}>
+            {[1, 2, 3, 4, 5].map((item) => (
+              <SkeletonBlock
+                key={item}
+                borderRadius={radii.pill}
+                height={48}
+                width={80}
+              />
+            ))}
+          </View>
+          {[1, 2, 3].map((item) => (
+            <SkeletonBlock key={item} borderRadius={radii.input} height={52} />
+          ))}
+        </View>
       </View>
     );
   }
 
   return (
     <View style={styles.screen}>
-      <ScreenHeader onBack={() => navigation.goBack()} stepLabel="Step 1 of 5" />
+      <ScreenHeader
+        onBack={() => navigation.goBack()}
+        progress={0.5}
+        stepLabel="Alignment Conversation"
+      />
       <View style={styles.content}>
         <View style={styles.copy}>
-          <Text style={styles.headline}>Choose a Slot</Text>
-          <Text style={styles.subtitle}>Select a time that works best for you.</Text>
+          <Text style={styles.headline}>Choose a Time</Text>
+          <Text style={styles.subtitle}>
+            Select an Alignment Conversation time that works best for you.
+          </Text>
         </View>
 
         {selectedGuide ? <GuideCard guide={selectedGuide} /> : null}
@@ -114,9 +145,9 @@ export function ChooseSlotScreen({ navigation }: Props) {
           </>
         ) : (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyTitle}>No slots available right now.</Text>
+            <Text style={styles.emptyTitle}>No times available right now.</Text>
             <Text style={styles.emptyText}>
-              Check back soon and we will surface new guide availability.
+              Check back soon and we will surface new Alignment Conversation times.
             </Text>
           </View>
         )}
@@ -125,7 +156,7 @@ export function ChooseSlotScreen({ navigation }: Props) {
       <Button
         disabled={!selectedDate || !selectedSlot}
         onPress={handleContinue}
-        title="Continue ->"
+        title="Continue"
       />
     </View>
   );
@@ -175,10 +206,8 @@ const styles = StyleSheet.create({
     ...typography.bodyMd,
     color: colors.onSurfaceVariant,
   },
-  loader: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.background,
+  dateSkeletonRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
   },
 });

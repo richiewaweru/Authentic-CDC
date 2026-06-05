@@ -42,9 +42,15 @@ const sampleOnboardingData: OnboardingData = {
 
 describe('onboarding service', () => {
   const fromMock = supabase.from as jest.Mock;
+  let consoleErrorSpy: jest.SpyInstance;
 
   beforeEach(() => {
+    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
     jest.clearAllMocks();
+  });
+
+  afterEach(() => {
+    consoleErrorSpy.mockRestore();
   });
 
   it('maps onboarding responses to canonical backend values', () => {
@@ -158,7 +164,16 @@ describe('onboarding service', () => {
     });
 
     await expect(onboardingService.getProfileStatus('user-1')).rejects.toThrow(
-      'Profile row not found for the signed-in user.',
+      'We could not prepare your profile yet. Please try again or contact support.',
     );
+  });
+
+  it('throws a friendly error when a response cannot be mapped', () => {
+    expect(() =>
+      mapOnboardingDataToResponsesPayload('user-1', {
+        ...sampleOnboardingData,
+        communicationStyle: 'Unknown style',
+      }),
+    ).toThrow('One of your responses could not be saved. Please try again.');
   });
 });

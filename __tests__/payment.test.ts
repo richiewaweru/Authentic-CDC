@@ -11,5 +11,6 @@ describe('confirmMockPayment', () => {
 
     expect(result.status).toBe('confirmed');
     expect(result.endTime).toBeTruthy();
+    expect(result.slotId).toBe(mockSlots[0].id);
   });
 });

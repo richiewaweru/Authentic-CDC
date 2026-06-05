@@ -10,9 +10,14 @@ import { futureValueChips } from './options';
 interface FutureVisionStepProps {
   data: OnboardingData;
   updateData: (payload: Partial<OnboardingData>) => void;
+  validationMessage?: string | null;
 }
 
-export function FutureVisionStep({ data, updateData }: FutureVisionStepProps) {
+export function FutureVisionStep({
+  data,
+  updateData,
+  validationMessage,
+}: FutureVisionStepProps) {
   const [activeField, setActiveField] = useState<'futureHopes' | 'authenticMeaning'>('futureHopes');
 
   const appendChip = (value: string) => {
@@ -27,6 +32,7 @@ export function FutureVisionStep({ data, updateData }: FutureVisionStepProps) {
       <Text style={styles.subtitle}>
         Reflect on the kind of relationship and life you hope to build.
       </Text>
+      {validationMessage ? <Text style={styles.validation}>{validationMessage}</Text> : null}
       <View style={styles.section}>
         <Text style={styles.label}>IN THE FUTURE, I HOPE TO BUILD...</Text>
         <TextArea
@@ -64,6 +70,10 @@ const styles = StyleSheet.create({
   subtitle: {
     ...typography.bodyMd,
     color: colors.onSurfaceVariant,
+  },
+  validation: {
+    ...typography.bodySm,
+    color: colors.error,
   },
   section: {
     gap: spacing.sm,

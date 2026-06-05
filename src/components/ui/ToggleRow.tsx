@@ -14,6 +14,8 @@ export function ToggleRow({ label, value, onValueChange }: ToggleRowProps) {
     <View style={styles.row}>
       <Text style={styles.label}>{label}</Text>
       <Switch
+        accessibilityLabel={label}
+        accessibilityRole="switch"
         onValueChange={onValueChange}
         thumbColor={value ? colors.onPrimary : colors.surface}
         trackColor={{ false: colors.outlineVariant, true: colors.primary }}

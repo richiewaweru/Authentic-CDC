@@ -10,7 +10,8 @@ export function OverviewStep() {
     <View style={styles.wrapper}>
       <Text style={styles.headline}>Build your Alignment Profile</Text>
       <Text style={styles.subtitle}>
-        A few guided steps help us understand your values, intentions, and community fit.
+        A few guided steps help us understand your values, intentions, and readiness for
+        Community Access.
       </Text>
       <View style={styles.sections}>
         {overviewSections.map((section) => (

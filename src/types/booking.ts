@@ -3,6 +3,7 @@ export interface Guide {
   name: string;
   title: string;
   initials: string;
+  avatarUrl?: string | null;
 }
 
 export interface Slot {
@@ -19,6 +20,11 @@ export interface BookingSelection {
 }
 
 export interface BookingRecord extends BookingSelection {
+  id?: string;
+  slotId?: string;
+  googleEventId?: string;
   endTime: string;
-  status: 'confirmed';
+  status: 'confirmed' | 'cancelled';
+  cancelledAt?: string;
+  cancelReason?: string;
 }

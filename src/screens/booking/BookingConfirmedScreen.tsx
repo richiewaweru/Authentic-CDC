@@ -1,5 +1,5 @@
 import React from 'react';
-import { Alert, StyleSheet, Text, View } from 'react-native';
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -18,22 +18,30 @@ export function BookingConfirmedScreen({ navigation }: Props) {
   if (!confirmedBooking) {
     return (
       <View style={styles.screen}>
-        <Text style={styles.headline}>Booking Confirmed</Text>
-        <Text style={styles.subtitle}>Your booking details will appear here once confirmed.</Text>
+        <Text style={styles.headline}>Your Alignment Conversation is Confirmed</Text>
+        <Text style={styles.subtitle}>
+          Your Alignment Conversation details will appear here once confirmed.
+        </Text>
       </View>
     );
   }
 
   return (
     <View style={styles.screen}>
-      <ScreenHeader onBack={() => navigation.goBack()} stepLabel="STEP 5 OF 5" />
+      <ScreenHeader
+        onBack={() => navigation.goBack()}
+        progress={1}
+        stepLabel="Booking Confirmed"
+      />
       <View style={styles.content}>
         <View style={styles.hero}>
           <View style={styles.checkCircle}>
             <Ionicons color={colors.goldDark} name="checkmark" size={26} />
           </View>
-          <Text style={styles.headline}>Booking Confirmed</Text>
-          <Text style={styles.subtitle}>We're looking forward to meeting you.</Text>
+          <Text style={styles.headline}>Your Alignment Conversation is Confirmed</Text>
+          <Text style={styles.subtitle}>
+            We are looking forward to your Alignment Conversation.
+          </Text>
         </View>
 
         <BookingSummary booking={confirmedBooking} />
@@ -45,7 +53,17 @@ export function BookingConfirmedScreen({ navigation }: Props) {
           title="Add to Calendar"
           variant="outlined"
         />
-        <Button onPress={() => navigation.navigate('PendingHome')} title="Return Home ->" />
+        <TouchableOpacity
+          accessibilityLabel="Connect Google Calendar to sync automatically"
+          accessibilityRole="button"
+          activeOpacity={0.8}
+          onPress={() =>
+            Alert.alert('Google Calendar sync', 'Google Calendar sync will be available soon.')
+          }
+        >
+          <Text style={styles.link}>Or connect Google Calendar to sync automatically</Text>
+        </TouchableOpacity>
+        <Button onPress={() => navigation.navigate('PendingHome')} title="Go to Pending Access" />
       </View>
     </View>
   );
@@ -90,5 +108,11 @@ const styles = StyleSheet.create({
   },
   footer: {
     gap: spacing.md,
+  },
+  link: {
+    ...typography.bodySm,
+    color: colors.primary,
+    textAlign: 'center',
+    textDecorationLine: 'underline',
   },
 });

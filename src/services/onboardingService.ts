@@ -62,16 +62,15 @@ function mapRequiredValue(
   const normalized = mapping[value];
 
   if (!normalized) {
-    throw new Error(`Unsupported onboarding value for ${fieldName}: ${value}`);
+    console.error(`Unsupported onboarding value for ${fieldName}:`, value);
+    throw new Error('One of your responses could not be saved. Please try again.');
   }
 
   return normalized;
 }
 
 function buildMissingProfileError() {
-  return new Error(
-    'Profile row not found for the signed-in user. Confirm the Supabase profile trigger has been installed and that existing users have been backfilled.',
-  );
+  return new Error('We could not prepare your profile yet. Please try again or contact support.');
 }
 
 function isMissingProfileError(error: PostgrestError | null) {
@@ -137,11 +136,13 @@ export const onboardingService = {
       .single();
 
     if (isMissingProfileError(error)) {
+      console.error('Missing profile row while loading profile status:', error);
       throw buildMissingProfileError();
     }
 
     if (error || !data) {
-      throw error ?? new Error('Unable to load the current profile status.');
+      console.error('Unable to load current profile status:', error);
+      throw new Error('Something went wrong loading your profile. Please try again.');
     }
 
     return mapProfileStatusRow(data as { onboarding_complete: boolean; user_state: UserState });
@@ -157,11 +158,13 @@ export const onboardingService = {
     ]);
 
     if (responsesError) {
-      throw responsesError;
+      console.error('Unable to save onboarding responses:', responsesError);
+      throw new Error('One of your responses could not be saved. Please try again.');
     }
 
     if (preferencesError) {
-      throw preferencesError;
+      console.error('Unable to save onboarding preferences:', preferencesError);
+      throw new Error('One of your responses could not be saved. Please try again.');
     }
 
     const { data: profileData, error: profileError } = await supabase
@@ -175,11 +178,13 @@ export const onboardingService = {
       .single();
 
     if (isMissingProfileError(profileError)) {
+      console.error('Missing profile row while finalizing onboarding:', profileError);
       throw buildMissingProfileError();
     }
 
     if (profileError || !profileData) {
-      throw profileError ?? new Error('Unable to update the current profile status.');
+      console.error('Unable to update profile status after onboarding:', profileError);
+      throw new Error('We could not finish setting up your profile. Please try again.');
     }
 
     return mapProfileStatusRow(

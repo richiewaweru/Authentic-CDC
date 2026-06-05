@@ -4,8 +4,9 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
 import { clearOnboardingProgress } from '../lib/onboardingStorage';
-import { BookingRecord, BookingSelection } from '../types/booking';
 import { authService, mapSupabaseUser } from '../services/authService';
+import { releaseSlot } from '../services/slotService';
+import { BookingRecord, BookingSelection } from '../types/booking';
 import type { AuthUser, ProfileStatus, UserState } from '../types/auth';
 
 interface AuthState {
@@ -27,6 +28,7 @@ interface AuthState {
   setBookingSelection: (selection: BookingSelection | null) => void;
   confirmBooking: (booking: BookingRecord) => void;
   clearBooking: () => void;
+  rescheduleBooking: () => Promise<void>;
 }
 
 const initialState = {
@@ -100,6 +102,19 @@ export const useAuthStore = create<AuthState>()(
       setBookingSelection: (selection) => set({ bookingSelection: selection }),
       confirmBooking: (booking) => set({ confirmedBooking: booking }),
       clearBooking: () => set({ bookingSelection: null, confirmedBooking: null }),
+      rescheduleBooking: async () => {
+        const booking = get().confirmedBooking;
+
+        if (!booking) {
+          return;
+        }
+
+        if (booking.slotId) {
+          await releaseSlot(booking.slotId);
+        }
+
+        set({ confirmedBooking: null, bookingSelection: null });
+      },
     }),
     {
       name: 'authentic-app-store',

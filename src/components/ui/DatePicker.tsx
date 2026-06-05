@@ -20,6 +20,9 @@ export function DatePicker({ dates, selectedDate, onSelect }: DatePickerProps) {
           <TouchableOpacity
             key={date}
             activeOpacity={0.9}
+            accessibilityLabel={formatDateLabel(date)}
+            accessibilityRole="radio"
+            accessibilityState={{ selected }}
             onPress={() => onSelect(date)}
             style={[styles.chip, selected && styles.selectedChip]}
           >

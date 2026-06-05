@@ -8,8 +8,10 @@ export const confirmMockPayment = async (
 ): Promise<BookingRecord> => {
   await delay(1500);
 
+  // TODO: Replace this mock success path with the real payment provider integration.
   return {
     ...selection,
+    slotId: selection.slot.id,
     endTime: addMinutesToTime(selection.slot.time, selection.slot.durationMinutes),
     status: 'confirmed',
   };

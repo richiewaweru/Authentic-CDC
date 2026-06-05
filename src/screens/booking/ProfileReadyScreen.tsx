@@ -14,13 +14,17 @@ type Props = NativeStackScreenProps<BookingStackParamList, 'ProfileReady'>;
 export function ProfileReadyScreen({ navigation }: Props) {
   return (
     <View style={styles.screen}>
-      <ScreenHeader onBack={() => navigation.goBack()} progress={1} stepLabel="Step 8 of 9" />
+      <ScreenHeader
+        onBack={() => navigation.goBack()}
+        progress={0.2}
+        stepLabel="Profile Complete"
+      />
       <View style={styles.content}>
         <Card style={styles.card}>
           <View style={styles.checkCircle}>
             <Ionicons color={colors.primary} name="checkmark" size={24} />
           </View>
-          <Text style={styles.cardTitle}>Analysis Complete</Text>
+          <Text style={styles.cardTitle}>Alignment Profile Complete</Text>
           <View style={styles.tags}>
             {['Integrity', 'Balance', 'Purpose'].map((tag) => (
               <View key={tag} style={styles.tag}>
@@ -29,8 +33,7 @@ export function ProfileReadyScreen({ navigation }: Props) {
             ))}
           </View>
           <Text style={styles.quote}>
-            "Your core values prioritize intentional action and long-term harmony over transient
-            gains."
+            "Your responses help us prepare a thoughtful and intentional Alignment Conversation."
           </Text>
         </Card>
 
@@ -44,11 +47,13 @@ export function ProfileReadyScreen({ navigation }: Props) {
         <View style={styles.infoRows}>
           <View style={styles.infoRow}>
             <Ionicons color={colors.goldDark} name="sparkles-outline" size={18} />
-            <Text style={styles.infoText}>Philosophical Core - Cognitive resonance detected</Text>
+            <Text style={styles.infoText}>Your Alignment Profile has been received.</Text>
           </View>
           <View style={styles.infoRow}>
             <Ionicons color={colors.goldDark} name="shield-checkmark-outline" size={18} />
-            <Text style={styles.infoText}>Ethical Guardrails - Established for your journey</Text>
+            <Text style={styles.infoText}>
+              Next, choose a time for your Alignment Conversation.
+            </Text>
           </View>
         </View>
       </View>
@@ -56,10 +61,10 @@ export function ProfileReadyScreen({ navigation }: Props) {
       <View style={styles.footer}>
         <Button
           onPress={() => navigation.navigate('ConversationInfo')}
-          title="Continue to Alignment Conversation ->"
+          title="Continue to Alignment Conversation"
         />
         <TouchableOpacity>
-          <Text style={styles.link}>Review Full Profile First</Text>
+          <Text style={styles.link}>Review Alignment Profile</Text>
         </TouchableOpacity>
       </View>
     </View>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Alert, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -14,30 +14,74 @@ import { formatDateLabel } from '../../utils/date';
 
 type Props = NativeStackScreenProps<BookingStackParamList, 'PendingHome'>;
 
-const lockedCards = ['Circle Matching', 'Community', 'Events', 'Messaging'];
+const lockedCards = ['Home', 'Events', 'Foundations', 'Profile'];
+const statusSteps = [
+  { label: 'Account Created', state: 'complete' },
+  { label: 'Alignment Profile Complete', state: 'complete' },
+  { label: 'Confirmation Fee Received', state: 'complete' },
+  { label: 'Alignment Conversation Scheduled', state: 'current' },
+  { label: 'Pending Community Access', state: 'upcoming' },
+] as const;
 
 export function PendingHomeScreen({ navigation }: Props) {
   const booking = useAuthStore((state) => state.confirmedBooking);
+  const rescheduleBooking = useAuthStore((state) => state.rescheduleBooking);
+  const [rescheduling, setRescheduling] = React.useState(false);
+
+  const handleReschedule = () => {
+    Alert.alert(
+      'Change time',
+      'Your current time will be released and you can choose a new Alignment Conversation time.',
+      [
+        { text: 'Keep current time', style: 'cancel' },
+        {
+          text: 'Change Time',
+          style: 'destructive',
+          onPress: () => {
+            void (async () => {
+              setRescheduling(true);
+              try {
+                await rescheduleBooking();
+                navigation.navigate('ChooseSlot');
+              } catch (error) {
+                console.error('Unable to reschedule Alignment Conversation:', error);
+                Alert.alert(
+                  'Could not change time',
+                  'We could not release your current time. Please try again.',
+                );
+              } finally {
+                setRescheduling(false);
+              }
+            })();
+          },
+        },
+      ],
+    );
+  };
 
   if (!booking) {
     return (
       <View style={styles.screen}>
-        <Text style={styles.headline}>Alignment Conversation Scheduled</Text>
-        <Text style={styles.subtitle}>Book your conversation to unlock the next phase.</Text>
-        <Button onPress={() => navigation.navigate('ChooseSlot')} title="Choose a Slot" />
+        <Text style={styles.pendingLabel}>Pending Access</Text>
+        <Text style={styles.headline}>Schedule Your Alignment Conversation</Text>
+        <Text style={styles.subtitle}>
+          Choose an Alignment Conversation time to continue toward Community Access.
+        </Text>
+        <Button onPress={() => navigation.navigate('ChooseSlot')} title="Choose a Time" />
       </View>
     );
   }
 
   return (
     <View style={styles.screen}>
-      <ScreenHeader onBack={() => navigation.goBack()} stepLabel="Step 1 of 5" />
+      <ScreenHeader onBack={() => navigation.goBack()} />
       <View style={styles.content}>
         <View style={styles.copy}>
-          <Text style={styles.headline}>Alignment Conversation Scheduled</Text>
+          <Text style={styles.pendingLabel}>Pending Access</Text>
+          <Text style={styles.headline}>Your Alignment Conversation is Scheduled</Text>
           <Text style={styles.subtitle}>
-            Your Alignment Conversation is scheduled. Full community access will open after your
-            conversation is complete.
+            Your Confirmation Fee has been received. Your full Community Access will open after
+            your Alignment Conversation and profile review are complete.
           </Text>
         </View>
 
@@ -46,15 +90,53 @@ export function PendingHomeScreen({ navigation }: Props) {
           <Text style={styles.bookingDetail}>{formatDateLabel(booking.slot.date)}</Text>
           <Text style={styles.bookingDetail}>{booking.slot.time}</Text>
           <View style={styles.cardButtons}>
-            <Button onPress={() => navigation.navigate('BookingConfirmed')} title="View Booking" />
-            <Button onPress={() => navigation.navigate('ChooseSlot')} title="Reschedule" variant="outlined" />
+            <Button onPress={() => navigation.navigate('BookingConfirmed')} title="View Details" />
+            <Button
+              loading={rescheduling}
+              onPress={handleReschedule}
+              title="Change Time"
+              variant="outlined"
+            />
           </View>
         </Card>
+
+        <View style={styles.statusTracker}>
+          {statusSteps.map((step) => (
+            <View key={step.label} style={styles.statusRow}>
+              <Ionicons
+                color={
+                  step.state === 'complete'
+                    ? colors.goldDark
+                    : step.state === 'current'
+                      ? colors.primary
+                      : colors.outline
+                }
+                name={
+                  step.state === 'complete'
+                    ? 'checkmark-circle'
+                    : step.state === 'current'
+                      ? 'ellipse'
+                      : 'ellipse-outline'
+                }
+                size={18}
+              />
+              <Text
+                style={[
+                  styles.statusText,
+                  step.state === 'complete' && styles.statusTextComplete,
+                  step.state === 'current' && styles.statusTextCurrent,
+                ]}
+              >
+                {step.label}
+              </Text>
+            </View>
+          ))}
+        </View>
 
         <View style={styles.previewSection}>
           <View style={styles.previewHeader}>
             <Ionicons color={colors.goldDark} name="lock-closed-outline" size={18} />
-            <Text style={styles.sectionTitle}>UPCOMING FOR YOU</Text>
+            <Text style={styles.sectionTitle}>COMMUNITY ACCESS PREVIEW</Text>
           </View>
           <View style={styles.grid}>
             {lockedCards.map((item) => (
@@ -64,13 +146,6 @@ export function PendingHomeScreen({ navigation }: Props) {
               </View>
             ))}
           </View>
-        </View>
-      </View>
-
-      <View style={styles.progressFooter}>
-        <Text style={styles.progressLabel}>PROFILE COMPLETION: 20%</Text>
-        <View style={styles.progressTrack}>
-          <View style={styles.progressFill} />
         </View>
       </View>
     </View>
@@ -92,6 +167,11 @@ const styles = StyleSheet.create({
   copy: {
     gap: spacing.sm,
   },
+  pendingLabel: {
+    ...typography.labelSm,
+    color: colors.goldDark,
+    textTransform: 'uppercase',
+  },
   headline: {
     ...typography.headlineLg,
     color: colors.primaryDark,
@@ -110,6 +190,28 @@ const styles = StyleSheet.create({
   },
   cardButtons: {
     gap: spacing.sm,
+  },
+  statusTracker: {
+    gap: spacing.sm,
+    padding: spacing.lg,
+    borderRadius: 24,
+    backgroundColor: colors.surface,
+  },
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  statusText: {
+    ...typography.bodySm,
+    color: colors.outline,
+  },
+  statusTextComplete: {
+    color: colors.goldDark,
+  },
+  statusTextCurrent: {
+    color: colors.primaryDark,
+    fontFamily: 'Inter_600SemiBold',
   },
   previewSection: {
     gap: spacing.md,
@@ -141,23 +243,5 @@ const styles = StyleSheet.create({
   lockedText: {
     ...typography.bodySm,
     color: colors.onSurfaceVariant,
-  },
-  progressFooter: {
-    gap: spacing.sm,
-  },
-  progressLabel: {
-    ...typography.labelSm,
-    color: colors.primaryDark,
-  },
-  progressTrack: {
-    height: 4,
-    borderRadius: 99,
-    backgroundColor: colors.outlineVariant,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    width: '20%',
-    height: '100%',
-    backgroundColor: colors.gold,
   },
 });

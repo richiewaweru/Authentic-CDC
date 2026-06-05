@@ -22,6 +22,7 @@ export function TextArea({
   return (
     <View style={styles.wrapper}>
       <TextInput
+        accessibilityLabel={placeholder}
         multiline
         onChangeText={onChangeText}
         onFocus={onFocus}
@@ -37,6 +38,7 @@ export function TextArea({
             const nextValue = value.trim().length ? `${value.trim()} ${tag}` : tag;
             onChangeText(nextValue);
           }}
+          getAccessibilityLabel={(tag) => `Add ${tag}`}
           options={starterTags}
           selectedValues={[]}
         />

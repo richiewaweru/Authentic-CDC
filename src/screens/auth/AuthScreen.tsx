@@ -37,11 +37,11 @@ export function AuthScreen({ navigation, route }: Props) {
           : await authService.signInWithGoogle();
 
       if (session && Platform.OS !== 'web') {
-        Alert.alert('Signed in', 'Authentication succeeded. We are preparing your profile.');
+        Alert.alert('Signed in', 'You are signed in. We are preparing your Alignment Profile.');
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Please try again.';
-      Alert.alert('Authentication could not be completed', message);
+      console.error(`Authentication with ${method} failed:`, error);
+      Alert.alert('Could not continue', 'We could not sign you in. Please try again.');
     } finally {
       setLoadingMethod(null);
     }
@@ -63,17 +63,20 @@ export function AuthScreen({ navigation, route }: Props) {
       if (result.needsEmailConfirmation) {
         Alert.alert(
           'Check your inbox',
-          'Your account was created. Confirm your email in Supabase, then sign in to continue.',
+          'Your account was created. Confirm your email, then sign in to continue.',
         );
       } else if (!result.session) {
         Alert.alert(
-          'Authentication pending',
-          'Your sign-in completed but no session was returned yet. Please try again if the app does not continue.',
+          'Still finishing sign-in',
+          'Your sign-in is still finishing. If the app does not continue, please try again.',
         );
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Please try again.';
-      Alert.alert(mode === 'signIn' ? 'Sign-in failed' : 'Sign-up failed', message);
+      console.error('Email authentication failed:', error);
+      Alert.alert(
+        mode === 'signIn' ? 'Could not sign you in' : 'Could not create your account',
+        'Please try again.',
+      );
     } finally {
       setLoadingMethod(null);
     }
@@ -84,7 +87,7 @@ export function AuthScreen({ navigation, route }: Props) {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={styles.screen}
     >
-      <ScreenHeader onBack={() => navigation.goBack()} stepLabel="Step 1 of 5" />
+      <ScreenHeader onBack={() => navigation.goBack()} stepLabel="Account Setup" />
 
       <View style={styles.content}>
         <View style={styles.iconWrap}>
@@ -97,7 +100,7 @@ export function AuthScreen({ navigation, route }: Props) {
           <Text style={styles.headline}>{mode === 'signIn' ? 'Welcome Back' : 'Join Authentic'}</Text>
           <Text style={styles.subtitle}>
             {mode === 'signIn'
-              ? 'Sign in to continue your Alignment Profile journey.'
+              ? 'Sign in to continue your Alignment Profile.'
               : 'Create your account to begin your Alignment Profile.'}
           </Text>
         </View>

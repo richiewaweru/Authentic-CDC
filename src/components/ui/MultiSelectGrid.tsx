@@ -3,8 +3,13 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { colors, radii, spacing, typography } from '../../theme';
 
+interface GridOption {
+  label: string;
+  icon?: string;
+}
+
 interface MultiSelectGridProps {
-  options: string[];
+  options: Array<string | GridOption>;
   selectedValues: string[];
   onToggle: (value: string) => void;
   limit?: number;
@@ -19,18 +24,27 @@ export function MultiSelectGrid({
   return (
     <View style={styles.grid}>
       {options.map((option) => {
-        const isSelected = selectedValues.includes(option);
+        const normalizedOption = typeof option === 'string' ? { label: option } : option;
+        const isSelected = selectedValues.includes(normalizedOption.label);
         const isDisabled = !isSelected && typeof limit === 'number' && selectedValues.length >= limit;
 
         return (
           <TouchableOpacity
-            key={option}
+            key={normalizedOption.label}
             activeOpacity={0.9}
+            accessibilityLabel={normalizedOption.label}
+            accessibilityRole="checkbox"
+            accessibilityState={{ selected: isSelected, disabled: isDisabled }}
             disabled={isDisabled}
-            onPress={() => onToggle(option)}
+            onPress={() => onToggle(normalizedOption.label)}
             style={[styles.item, isSelected && styles.selected, isDisabled && styles.disabled]}
           >
-            <Text style={[styles.label, isSelected && styles.selectedLabel]}>{option}</Text>
+            {normalizedOption.icon ? (
+              <Text style={styles.icon}>{normalizedOption.icon}</Text>
+            ) : null}
+            <Text style={[styles.label, isSelected && styles.selectedLabel]}>
+              {normalizedOption.label}
+            </Text>
           </TouchableOpacity>
         );
       })}
@@ -52,6 +66,11 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     minHeight: 64,
     justifyContent: 'center',
+    alignItems: 'center',
+  },
+  icon: {
+    fontSize: 20,
+    marginBottom: 4,
   },
   selected: {
     backgroundColor: colors.primary,
@@ -60,6 +79,7 @@ const styles = StyleSheet.create({
     ...typography.bodySm,
     color: colors.charcoal,
     fontFamily: 'Inter_500Medium',
+    textAlign: 'center',
   },
   selectedLabel: {
     color: colors.onPrimary,

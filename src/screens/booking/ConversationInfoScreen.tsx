@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
+import { ScreenHeader } from '../../components/ui/ScreenHeader';
 import { BookingStackParamList } from '../../navigation/types';
 import { colors, spacing, typography } from '../../theme';
 
@@ -13,20 +14,25 @@ type Props = NativeStackScreenProps<BookingStackParamList, 'ConversationInfo'>;
 export function ConversationInfoScreen({ navigation }: Props) {
   return (
     <View style={styles.screen}>
+      <ScreenHeader
+        onBack={() => navigation.goBack()}
+        progress={0.35}
+        stepLabel="Alignment Conversation"
+      />
       <View style={styles.content}>
         <View style={styles.copy}>
           <Text style={styles.headline}>Alignment Conversation</Text>
           <Text style={styles.subtitle}>
-            To help build a safe and aligned community, every member starts with a personal
-            screening.
+            To help build a safe and aligned community, every member begins with an Alignment
+            Conversation.
           </Text>
         </View>
 
         <Card style={styles.card}>
           <Text style={styles.cardTitle}>Schedule Your Alignment Conversation</Text>
           <Text style={styles.cardText}>
-            Book a 15-minute video call with a community guide to verify your church alignment and
-            relationship intentions.
+            Choose a 15-minute video call with a community guide to verify your church alignment
+            and relationship intentions.
           </Text>
         </Card>
 
@@ -35,7 +41,7 @@ export function ConversationInfoScreen({ navigation }: Props) {
           {[
             '15-minute video conversation',
             'Verification of church affiliation',
-            'Q&A about community values',
+            'Q&A about Community Access values',
             'Review of relationship intentions',
           ].map((item) => (
             <View key={item} style={styles.expectationRow}>
@@ -46,7 +52,7 @@ export function ConversationInfoScreen({ navigation }: Props) {
         </View>
       </View>
 
-      <Button onPress={() => navigation.navigate('ChooseSlot')} title="Choose a Time" />
+      <Button onPress={() => navigation.navigate('ChooseSlot')} title="Continue to Times" />
     </View>
   );
 }
@@ -56,7 +62,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xxl,
+    paddingTop: spacing.lg,
     paddingBottom: spacing.xl,
     justifyContent: 'space-between',
   },

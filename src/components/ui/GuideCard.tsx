@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
 
 import { Guide } from '../../types/booking';
 import { colors, radii, spacing, typography } from '../../theme';
@@ -12,9 +12,17 @@ interface GuideCardProps {
 export function GuideCard({ guide }: GuideCardProps) {
   return (
     <Card style={styles.card}>
-      <View style={styles.avatar}>
-        <Text style={styles.initials}>{guide.initials}</Text>
-      </View>
+      {guide.avatarUrl ? (
+        <Image
+          accessibilityLabel={`${guide.name} photo`}
+          source={{ uri: guide.avatarUrl }}
+          style={styles.avatarImage}
+        />
+      ) : (
+        <View style={styles.avatar}>
+          <Text style={styles.initials}>{guide.initials}</Text>
+        </View>
+      )}
       <View style={styles.copy}>
         <Text style={styles.name}>{guide.name}</Text>
         <Text style={styles.title}>{guide.title}</Text>
@@ -38,6 +46,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  avatarImage: {
+    width: 56,
+    height: 56,
+    borderRadius: radii.pill,
   },
   initials: {
     ...typography.bodyMd,

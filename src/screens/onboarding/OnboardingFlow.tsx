@@ -35,13 +35,23 @@ import { initialOnboardingState, onboardingReducer } from './state';
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'Onboarding'>;
 
 const stepMeta = [
-  { label: 'Step 2 of 9', progress: 2 / 9, cta: 'Start Alignment Profile' },
-  { label: 'Step 3 of 9', progress: 3 / 9, cta: 'Continue ->' },
-  { label: 'Step 4 of 9', progress: 4 / 9, cta: 'Continue ->' },
-  { label: 'Step 5 of 9', progress: 5 / 9, cta: 'Continue ->' },
-  { label: 'Step 6 of 9', progress: 6 / 9, cta: 'Continue ->' },
-  { label: 'Step 7 of 9', progress: 7 / 9, cta: 'Continue ->' },
-  { label: 'Step 8 of 9', progress: 8 / 9, cta: 'Complete Alignment Profile' },
+  {
+    eyebrow: 'Alignment Profile',
+    label: 'Overview',
+    progress: 1 / 7,
+    cta: 'Start Alignment Profile',
+  },
+  { eyebrow: 'Alignment Profile', label: 'Relationship', progress: 2 / 7, cta: 'Continue' },
+  { eyebrow: 'Alignment Profile', label: 'Communication', progress: 3 / 7, cta: 'Continue' },
+  { eyebrow: 'Alignment Profile', label: 'Lifestyle', progress: 4 / 7, cta: 'Continue' },
+  { eyebrow: 'Alignment Profile', label: 'Faith', progress: 5 / 7, cta: 'Continue' },
+  { eyebrow: 'Alignment Profile', label: 'Future Vision', progress: 6 / 7, cta: 'Continue' },
+  {
+    eyebrow: 'Alignment Profile',
+    label: 'Preferences',
+    progress: 7 / 7,
+    cta: 'Complete Alignment Profile',
+  },
 ] as const;
 
 export function OnboardingFlow({ navigation }: Props) {
@@ -131,17 +141,19 @@ export function OnboardingFlow({ navigation }: Props) {
     dispatch({ type: 'PREV_STEP' });
   };
 
-  const getValidationStep = (path: string) => {
-    if (path === 'relationshipGoal') {
-      return 1;
-    }
-
-    if (path === 'sharedFaith') {
-      return 4;
-    }
-
-    return 6;
+  const validationStepMap: Record<string, number> = {
+    relationshipGoal: 1,
+    communicationStyle: 2,
+    conflictStyle: 2,
+    lifestyleVision: 3,
+    sharedFaith: 4,
+    churchInvolvement: 4,
+    futureHopes: 5,
+    ageRange: 6,
+    distanceRange: 6,
   };
+
+  const getValidationStep = (path: string) => validationStepMap[path] ?? 6;
 
   const completeFlow = async () => {
     const result = onboardingSchema.safeParse(state.data);
@@ -175,7 +187,11 @@ export function OnboardingFlow({ navigation }: Props) {
       try {
         await completeFlow();
       } catch (error) {
-        Alert.alert('Unable to complete profile', 'Please try again in a moment.');
+        console.error('Unable to complete Alignment Profile:', error);
+        Alert.alert(
+          'Could not complete your Alignment Profile',
+          'Please try again in a moment.',
+        );
       }
       return;
     }
@@ -196,9 +212,21 @@ export function OnboardingFlow({ navigation }: Props) {
           />
         );
       case 2:
-        return <CommunicationStep data={state.data} updateData={updateData} />;
+        return (
+          <CommunicationStep
+            data={state.data}
+            updateData={updateData}
+            validationMessage={state.validationStep === 2 ? state.validationMessage : null}
+          />
+        );
       case 3:
-        return <LifestyleStep data={state.data} updateData={updateData} />;
+        return (
+          <LifestyleStep
+            data={state.data}
+            updateData={updateData}
+            validationMessage={state.validationStep === 3 ? state.validationMessage : null}
+          />
+        );
       case 4:
         return (
           <FaithStep
@@ -208,7 +236,13 @@ export function OnboardingFlow({ navigation }: Props) {
           />
         );
       case 5:
-        return <FutureVisionStep data={state.data} updateData={updateData} />;
+        return (
+          <FutureVisionStep
+            data={state.data}
+            updateData={updateData}
+            validationMessage={state.validationStep === 5 ? state.validationMessage : null}
+          />
+        );
       case 6:
       default:
         return (
@@ -235,6 +269,7 @@ export function OnboardingFlow({ navigation }: Props) {
       style={styles.screen}
     >
       <ScreenHeader
+        eyebrow={currentMeta.eyebrow}
         onBack={handleBack}
         progress={currentMeta.progress}
         stepLabel={currentMeta.label}

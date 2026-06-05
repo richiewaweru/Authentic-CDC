@@ -27,6 +27,9 @@ export function SingleSelect({ options, selectedValue, onSelect }: SingleSelectP
           <TouchableOpacity
             key={option.value}
             activeOpacity={0.9}
+            accessibilityLabel={option.label}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: isSelected }}
             onPress={() => onSelect(option.value)}
             style={[styles.option, isSelected && styles.optionSelected]}
           >

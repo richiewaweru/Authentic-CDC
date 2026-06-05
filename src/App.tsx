@@ -15,6 +15,7 @@ import {
   useFonts as usePlayfairFonts,
 } from '@expo-google-fonts/playfair-display';
 
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { RootNavigator } from './navigation/RootNavigator';
 import { authService } from './services/authService';
 import { onboardingService } from './services/onboardingService';
@@ -121,10 +122,12 @@ export default function App() {
   }
 
   return (
-    <NavigationContainer theme={navigationTheme}>
-      <StatusBar style="dark" />
-      <RootNavigator />
-    </NavigationContainer>
+    <ErrorBoundary>
+      <NavigationContainer theme={navigationTheme}>
+        <StatusBar style="dark" />
+        <RootNavigator />
+      </NavigationContainer>
+    </ErrorBoundary>
   );
 }
 

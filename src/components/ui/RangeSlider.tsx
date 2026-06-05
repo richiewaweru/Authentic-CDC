@@ -29,6 +29,7 @@ export function RangeSlider({ label, min, max, value, onChange, unit }: RangeSli
       </View>
       <Text style={styles.caption}>Minimum</Text>
       <Slider
+        accessibilityLabel={`${label} minimum value`}
         maximumTrackTintColor={colors.outlineVariant}
         maximumValue={Math.max(min + 1, end - 1)}
         minimumTrackTintColor={colors.gold}
@@ -40,6 +41,7 @@ export function RangeSlider({ label, min, max, value, onChange, unit }: RangeSli
       />
       <Text style={styles.caption}>Maximum</Text>
       <Slider
+        accessibilityLabel={`${label} maximum value`}
         maximumTrackTintColor={colors.outlineVariant}
         maximumValue={max}
         minimumTrackTintColor={colors.gold}

@@ -9,6 +9,7 @@ interface MultiSelectPillProps {
   onToggle: (value: string) => void;
   limit?: number;
   selectedStyle?: 'gold' | 'primary';
+  getAccessibilityLabel?: (option: string) => string;
 }
 
 export function MultiSelectPill({
@@ -17,6 +18,7 @@ export function MultiSelectPill({
   onToggle,
   limit,
   selectedStyle = 'gold',
+  getAccessibilityLabel,
 }: MultiSelectPillProps) {
   return (
     <View style={styles.wrapper}>
@@ -28,6 +30,9 @@ export function MultiSelectPill({
           <TouchableOpacity
             key={option}
             activeOpacity={0.9}
+            accessibilityLabel={getAccessibilityLabel ? getAccessibilityLabel(option) : option}
+            accessibilityRole="checkbox"
+            accessibilityState={{ selected: isSelected, disabled: isDisabled }}
             disabled={isDisabled}
             onPress={() => onToggle(option)}
             style={[

@@ -9,15 +9,21 @@ import { communicationStyles, conflictStyles } from './options';
 interface CommunicationStepProps {
   data: OnboardingData;
   updateData: (payload: Partial<OnboardingData>) => void;
+  validationMessage?: string | null;
 }
 
-export function CommunicationStep({ data, updateData }: CommunicationStepProps) {
+export function CommunicationStep({
+  data,
+  updateData,
+  validationMessage,
+}: CommunicationStepProps) {
   return (
     <View style={styles.wrapper}>
       <Text style={styles.headline}>Communication & Growth</Text>
       <Text style={styles.subtitle}>
         Healthy connection grows through honesty, patience, and self-awareness.
       </Text>
+      {validationMessage ? <Text style={styles.validation}>{validationMessage}</Text> : null}
       <View style={styles.section}>
         <Text style={styles.label}>HOW WOULD YOU DESCRIBE YOUR COMMUNICATION STYLE?</Text>
         <SingleSelect
@@ -49,6 +55,10 @@ const styles = StyleSheet.create({
   subtitle: {
     ...typography.bodyMd,
     color: colors.onSurfaceVariant,
+  },
+  validation: {
+    ...typography.bodySm,
+    color: colors.error,
   },
   section: {
     gap: spacing.sm,

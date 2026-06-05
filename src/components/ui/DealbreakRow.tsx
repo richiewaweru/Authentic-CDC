@@ -21,6 +21,9 @@ export function DealbreakRow({ label, value, options, onChange }: DealbreakRowPr
             <TouchableOpacity
               key={option}
               activeOpacity={0.9}
+              accessibilityLabel={`${label}: ${option}`}
+              accessibilityRole="radio"
+              accessibilityState={{ selected }}
               onPress={() => onChange(option)}
               style={[styles.option, selected && styles.selected]}
             >
