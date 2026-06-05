@@ -33,6 +33,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   plugins: [
     'expo-font',
+    'expo-status-bar',
     ['expo-web-browser', { experimentalLauncherActivity: false }],
     'expo-secure-store',
   ],
