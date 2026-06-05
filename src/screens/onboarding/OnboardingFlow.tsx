@@ -19,6 +19,7 @@ import { ScreenHeader } from '../../components/ui/ScreenHeader';
 import { useOnboardingPersistence } from '../../hooks/useOnboardingPersistence';
 import { onboardingSchema } from '../../lib/validation';
 import { OnboardingStackParamList } from '../../navigation/types';
+import { onboardingService } from '../../services/onboardingService';
 import { useAuthStore } from '../../stores/authStore';
 import { OnboardingData } from '../../types/onboarding';
 import { colors, spacing, typography } from '../../theme';
@@ -46,9 +47,10 @@ const stepMeta = [
 export function OnboardingFlow({ navigation }: Props) {
   const user = useAuthStore((state) => state.user);
   const signOut = useAuthStore((state) => state.signOut);
-  const completeOnboarding = useAuthStore((state) => state.completeOnboarding);
+  const setProfileStatus = useAuthStore((state) => state.setProfileStatus);
   const [state, dispatch] = useReducer(onboardingReducer, initialOnboardingState);
   const [restoring, setRestoring] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const slideAnim = useRef(new Animated.Value(0)).current;
   const firstRender = useRef(true);
   const scrollRef = useRef<ScrollView>(null);
@@ -153,8 +155,19 @@ export function OnboardingFlow({ navigation }: Props) {
       return;
     }
 
-    await persistence.clearProgress();
-    completeOnboarding();
+    if (!user) {
+      throw new Error('You must be signed in to complete your alignment profile.');
+    }
+
+    setSubmitting(true);
+
+    try {
+      const profileStatus = await onboardingService.saveCompletedOnboarding(user.id, state.data);
+      await persistence.clearProgress();
+      setProfileStatus(profileStatus);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleContinue = async () => {
@@ -237,7 +250,11 @@ export function OnboardingFlow({ navigation }: Props) {
         </ScrollView>
       </Animated.View>
       <PinnedFooter>
-        <Button onPress={() => void handleContinue()} title={currentMeta.cta} />
+        <Button
+          loading={state.step === 6 && submitting}
+          onPress={() => void handleContinue()}
+          title={currentMeta.cta}
+        />
         {state.step === 0 ? (
           <Text style={styles.helper}>Your progress is saved as you go.</Text>
         ) : null}

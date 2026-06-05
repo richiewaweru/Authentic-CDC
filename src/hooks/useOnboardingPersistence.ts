@@ -1,26 +1,28 @@
-import { useCallback } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useCallback, useMemo } from 'react';
 
-import { OnboardingState } from '../types/onboarding';
-
-const buildKey = (userId: string) => `onboarding_progress_${userId}`;
+import type { OnboardingState } from '../types/onboarding';
+import {
+  clearOnboardingProgress,
+  restoreOnboardingProgress,
+  saveOnboardingProgress,
+} from '../lib/onboardingStorage';
 
 export const useOnboardingPersistence = (userId: string) => {
   const saveProgress = useCallback(
     async (state: OnboardingState) => {
-      await AsyncStorage.setItem(buildKey(userId), JSON.stringify(state));
+      await saveOnboardingProgress(userId, state);
     },
     [userId],
   );
 
-  const restoreProgress = useCallback(async () => {
-    const value = await AsyncStorage.getItem(buildKey(userId));
-    return value ? (JSON.parse(value) as OnboardingState) : null;
-  }, [userId]);
+  const restoreProgress = useCallback(async () => restoreOnboardingProgress(userId), [userId]);
 
   const clearProgress = useCallback(async () => {
-    await AsyncStorage.removeItem(buildKey(userId));
+    await clearOnboardingProgress(userId);
   }, [userId]);
 
-  return { saveProgress, restoreProgress, clearProgress };
+  return useMemo(
+    () => ({ saveProgress, restoreProgress, clearProgress }),
+    [clearProgress, restoreProgress, saveProgress],
+  );
 };

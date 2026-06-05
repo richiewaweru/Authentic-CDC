@@ -56,10 +56,11 @@ function BookingNavigator() {
 
 export function RootNavigator() {
   const hasHydrated = useAuthStore((state) => state.hasHydrated);
+  const authReady = useAuthStore((state) => state.authReady);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const onboardingComplete = useAuthStore((state) => state.onboardingComplete);
 
-  if (!hasHydrated) {
+  if (!hasHydrated || !authReady) {
     return (
       <View style={styles.loader}>
         <ActivityIndicator color={colors.primary} size="large" />

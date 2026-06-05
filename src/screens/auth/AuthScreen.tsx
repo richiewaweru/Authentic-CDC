@@ -1,36 +1,89 @@
 import React, { useState } from 'react';
-import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { Button } from '../../components/ui/Button';
 import { ScreenHeader } from '../../components/ui/ScreenHeader';
-import { mockSignIn, mockSignUp } from '../../mocks/auth';
 import { AuthStackParamList } from '../../navigation/types';
-import { useAuthStore } from '../../stores/authStore';
+import { authService } from '../../services/authService';
 import { colors, spacing, typography } from '../../theme';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Auth'>;
 
 export function AuthScreen({ navigation, route }: Props) {
-  const signInStore = useAuthStore((state) => state.signIn);
   const [loadingMethod, setLoadingMethod] = useState<string | null>(null);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showEmailForm, setShowEmailForm] = useState(false);
   const mode = route.params?.mode ?? 'join';
+  const showAppleSignIn = Platform.OS === 'ios';
 
-  const runAuth = async (method: 'apple' | 'google' | 'email' | 'signin') => {
+  const runSocialAuth = async (method: 'apple' | 'google') => {
     try {
       setLoadingMethod(method);
-      const user = method === 'signin' ? await mockSignIn() : await mockSignUp(method);
-      signInStore(user);
+      const session =
+        method === 'apple'
+          ? await authService.signInWithApple()
+          : await authService.signInWithGoogle();
+
+      if (session && Platform.OS !== 'web') {
+        Alert.alert('Signed in', 'Authentication succeeded. We are preparing your profile.');
+      }
     } catch (error) {
-      Alert.alert('Something went wrong', 'Please try again.');
+      const message = error instanceof Error ? error.message : 'Please try again.';
+      Alert.alert('Authentication could not be completed', message);
+    } finally {
+      setLoadingMethod(null);
+    }
+  };
+
+  const submitEmailAuth = async () => {
+    if (!email.trim() || !password.trim()) {
+      Alert.alert('Missing details', 'Enter both an email address and password to continue.');
+      return;
+    }
+
+    try {
+      setLoadingMethod('email-submit');
+      const result =
+        mode === 'signIn'
+          ? await authService.signInWithEmail(email.trim(), password)
+          : await authService.signUpWithEmail(email.trim(), password);
+
+      if (result.needsEmailConfirmation) {
+        Alert.alert(
+          'Check your inbox',
+          'Your account was created. Confirm your email in Supabase, then sign in to continue.',
+        );
+      } else if (!result.session) {
+        Alert.alert(
+          'Authentication pending',
+          'Your sign-in completed but no session was returned yet. Please try again if the app does not continue.',
+        );
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Please try again.';
+      Alert.alert(mode === 'signIn' ? 'Sign-in failed' : 'Sign-up failed', message);
     } finally {
       setLoadingMethod(null);
     }
   };
 
   return (
-    <View style={styles.screen}>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      style={styles.screen}
+    >
       <ScreenHeader onBack={() => navigation.goBack()} stepLabel="Step 1 of 5" />
 
       <View style={styles.content}>
@@ -50,17 +103,19 @@ export function AuthScreen({ navigation, route }: Props) {
         </View>
 
         <View style={styles.actions}>
-          <Button
-            iconLeft={<Ionicons color={colors.primary} name="logo-apple" size={18} />}
-            loading={loadingMethod === 'apple'}
-            onPress={() => runAuth('apple')}
-            title="Continue with Apple"
-            variant="secondary"
-          />
+          {showAppleSignIn ? (
+            <Button
+              iconLeft={<Ionicons color={colors.primary} name="logo-apple" size={18} />}
+              loading={loadingMethod === 'apple'}
+              onPress={() => void runSocialAuth('apple')}
+              title="Continue with Apple"
+              variant="secondary"
+            />
+          ) : null}
           <Button
             iconLeft={<Ionicons color={colors.primary} name="logo-google" size={18} />}
             loading={loadingMethod === 'google'}
-            onPress={() => runAuth('google')}
+            onPress={() => void runSocialAuth('google')}
             title="Continue with Google"
             variant="secondary"
           />
@@ -71,20 +126,55 @@ export function AuthScreen({ navigation, route }: Props) {
           </View>
           <Button
             loading={loadingMethod === 'email'}
-            onPress={() => runAuth('email')}
+            onPress={() => setShowEmailForm((current) => !current)}
             title="Continue with Email"
           />
+          {showEmailForm ? (
+            <View style={styles.emailForm}>
+              <TextInput
+                autoCapitalize="none"
+                autoComplete="email"
+                keyboardType="email-address"
+                onChangeText={setEmail}
+                placeholder="Email address"
+                placeholderTextColor={colors.outline}
+                style={styles.input}
+                value={email}
+              />
+              <TextInput
+                autoCapitalize="none"
+                onChangeText={setPassword}
+                placeholder="Password"
+                placeholderTextColor={colors.outline}
+                secureTextEntry
+                style={styles.input}
+                value={password}
+              />
+              <Button
+                loading={loadingMethod === 'email-submit'}
+                onPress={() => void submitEmailAuth()}
+                title={mode === 'signIn' ? 'Sign In with Email' : 'Create Account with Email'}
+              />
+            </View>
+          ) : null}
         </View>
 
-        <TouchableOpacity onPress={() => runAuth('signin')}>
+        <TouchableOpacity
+          onPress={() =>
+            navigation.replace('Auth', {
+              mode: mode === 'signIn' ? 'join' : 'signIn',
+            })
+          }
+        >
           <Text style={styles.linkText}>
-            Already have an account? <Text style={styles.linkBold}>Sign In</Text>
+            {mode === 'signIn' ? 'Need an account? ' : 'Already have an account? '}
+            <Text style={styles.linkBold}>{mode === 'signIn' ? 'Join the Community' : 'Sign In'}</Text>
           </Text>
         </TouchableOpacity>
       </View>
 
       <Text style={styles.footer}>BY CONTINUING, YOU AGREE TO OUR TERMS OF SERVICE & PRIVACY POLICY</Text>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -129,6 +219,25 @@ const styles = StyleSheet.create({
   },
   actions: {
     gap: spacing.md,
+  },
+  emailForm: {
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+    padding: spacing.md,
+    borderRadius: 16,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.sand,
+  },
+  input: {
+    minHeight: 52,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.sandDark,
+    paddingHorizontal: spacing.md,
+    backgroundColor: colors.background,
+    color: colors.onSurface,
+    ...typography.bodyMd,
   },
   dividerRow: {
     flexDirection: 'row',
