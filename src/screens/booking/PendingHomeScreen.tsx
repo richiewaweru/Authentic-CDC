@@ -1,7 +1,8 @@
 import React from 'react';
-import { Alert, StyleSheet, Text, View } from 'react-native';
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
@@ -24,8 +25,10 @@ const statusSteps = [
 ] as const;
 
 export function PendingHomeScreen({ navigation }: Props) {
+  const insets = useSafeAreaInsets();
   const booking = useAuthStore((state) => state.confirmedBooking);
   const rescheduleBooking = useAuthStore((state) => state.rescheduleBooking);
+  const signOut = useAuthStore((state) => state.signOut);
   const [rescheduling, setRescheduling] = React.useState(false);
 
   const handleReschedule = () => {
@@ -59,21 +62,47 @@ export function PendingHomeScreen({ navigation }: Props) {
     );
   };
 
+  const handleSignOut = () => {
+    Alert.alert('Sign out', 'Are you sure you want to sign out of Authentic?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Sign Out',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await signOut();
+          } catch (error) {
+            console.error('Sign out failed:', error);
+            Alert.alert('Could not sign out', 'Please try again.');
+          }
+        },
+      },
+    ]);
+  };
+
   if (!booking) {
     return (
-      <View style={styles.screen}>
+      <View style={[styles.screen, { paddingBottom: Math.max(insets.bottom, 16) + 16 }]}>
         <Text style={styles.pendingLabel}>Pending Access</Text>
         <Text style={styles.headline}>Schedule Your Alignment Conversation</Text>
         <Text style={styles.subtitle}>
           Choose an Alignment Conversation time to continue toward Community Access.
         </Text>
         <Button onPress={() => navigation.navigate('ChooseSlot')} title="Choose a Time" />
+        <TouchableOpacity
+          accessibilityLabel="Sign out"
+          accessibilityRole="button"
+          onPress={handleSignOut}
+          style={styles.signOutButton}
+        >
+          <Text style={styles.signOutText}>Sign Out</Text>
+        </TouchableOpacity>
       </View>
     );
   }
 
   return (
-    <View style={styles.screen}>
+    <View style={[styles.screen, { paddingBottom: Math.max(insets.bottom, 16) + 16 }]}>
       <ScreenHeader onBack={() => navigation.goBack()} />
       <View style={styles.content}>
         <View style={styles.copy}>
@@ -147,6 +176,15 @@ export function PendingHomeScreen({ navigation }: Props) {
             ))}
           </View>
         </View>
+
+        <TouchableOpacity
+          accessibilityLabel="Sign out"
+          accessibilityRole="button"
+          onPress={handleSignOut}
+          style={styles.signOutButton}
+        >
+          <Text style={styles.signOutText}>Sign Out</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -243,5 +281,17 @@ const styles = StyleSheet.create({
   lockedText: {
     ...typography.bodySm,
     color: colors.onSurfaceVariant,
+  },
+  signOutButton: {
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    marginTop: spacing.xl,
+    marginBottom: spacing.xl,
+  },
+  signOutText: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 14,
+    lineHeight: 20,
+    color: colors.error,
   },
 });

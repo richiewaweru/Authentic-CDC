@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
@@ -11,6 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '../../components/ui/Button';
 import { ScreenHeader } from '../../components/ui/ScreenHeader';
@@ -21,6 +23,7 @@ import { colors, spacing, typography } from '../../theme';
 type Props = NativeStackScreenProps<AuthStackParamList, 'Auth'>;
 
 export function AuthScreen({ navigation, route }: Props) {
+  const insets = useSafeAreaInsets();
   const [loadingMethod, setLoadingMethod] = useState<string | null>(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -63,8 +66,19 @@ export function AuthScreen({ navigation, route }: Props) {
       if (result.needsEmailConfirmation) {
         Alert.alert(
           'Check your inbox',
-          'Your account was created. Confirm your email, then sign in to continue.',
+          'We sent a confirmation link to your email. After confirming, come back here and tap Sign In.',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                setEmail('');
+                setPassword('');
+                navigation.replace('Auth', { mode: 'signIn' });
+              },
+            },
+          ],
         );
+        return;
       } else if (!result.session) {
         Alert.alert(
           'Still finishing sign-in',
@@ -85,15 +99,18 @@ export function AuthScreen({ navigation, route }: Props) {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={styles.screen}
+      style={[styles.screen, { paddingBottom: Math.max(insets.bottom, 16) + 16 }]}
     >
       <ScreenHeader onBack={() => navigation.goBack()} stepLabel="Account Setup" />
 
       <View style={styles.content}>
-        <View style={styles.iconWrap}>
-          <View style={styles.iconCircle}>
-            <Ionicons color={colors.goldDark} name="shield-checkmark-outline" size={32} />
-          </View>
+        <View style={styles.logoWrap}>
+          <Image
+            accessibilityLabel="Authentic logo"
+            resizeMode="contain"
+            source={require('../../../assets/authentic_logo.png')}
+            style={styles.logoSmall}
+          />
         </View>
 
         <View style={styles.copy}>
@@ -193,18 +210,13 @@ const styles = StyleSheet.create({
   content: {
     gap: spacing.xl,
   },
-  iconWrap: {
+  logoWrap: {
     alignItems: 'center',
   },
-  iconCircle: {
+  logoSmall: {
     width: 92,
     height: 92,
-    borderRadius: 46,
-    backgroundColor: colors.sand,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: colors.gold,
+    alignSelf: 'center',
   },
   copy: {
     gap: spacing.sm,

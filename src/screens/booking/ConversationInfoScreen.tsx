@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
 import { Button } from '../../components/ui/Button';
@@ -12,8 +13,10 @@ import { colors, spacing, typography } from '../../theme';
 type Props = NativeStackScreenProps<BookingStackParamList, 'ConversationInfo'>;
 
 export function ConversationInfoScreen({ navigation }: Props) {
+  const insets = useSafeAreaInsets();
+
   return (
-    <View style={styles.screen}>
+    <View style={[styles.screen, { paddingBottom: Math.max(insets.bottom, 16) + 16 }]}>
       <ScreenHeader
         onBack={() => navigation.goBack()}
         progress={0.35}

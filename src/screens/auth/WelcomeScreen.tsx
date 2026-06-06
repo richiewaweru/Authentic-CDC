@@ -1,6 +1,7 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '../../components/ui/Button';
 import { colors, spacing, typography } from '../../theme';
@@ -9,13 +10,17 @@ import { AuthStackParamList } from '../../navigation/types';
 type Props = NativeStackScreenProps<AuthStackParamList, 'Welcome'>;
 
 export function WelcomeScreen({ navigation }: Props) {
+  const insets = useSafeAreaInsets();
+
   return (
-    <View style={styles.screen}>
+    <View style={[styles.screen, { paddingBottom: Math.max(insets.bottom, 16) + 16 }]}>
       <View style={styles.brandBlock}>
-        <View style={styles.brandIcon}>
-          <Text style={styles.infinity}>oo</Text>
-        </View>
-        <Text style={styles.brand}>Authentic</Text>
+        <Image
+          accessibilityLabel="Authentic logo"
+          resizeMode="contain"
+          source={require('../../../assets/authentic_logo.png')}
+          style={styles.logo}
+        />
       </View>
 
       <View style={styles.hero}>
@@ -59,24 +64,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.sm,
   },
-  brandIcon: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    borderWidth: 1,
-    borderColor: colors.sandDark,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.surface,
-  },
-  infinity: {
-    ...typography.headlineMd,
-    color: colors.primary,
-    letterSpacing: -1,
-  },
-  brand: {
-    ...typography.headlineMd,
-    color: colors.primaryDark,
+  logo: {
+    width: 200,
+    height: 200,
+    alignSelf: 'center',
+    marginBottom: spacing.lg,
   },
   hero: {
     gap: spacing.md,

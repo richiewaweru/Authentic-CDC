@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '../../components/ui/Button';
 import { DatePicker } from '../../components/ui/DatePicker';
@@ -17,6 +18,7 @@ import { colors, radii, spacing, typography } from '../../theme';
 type Props = NativeStackScreenProps<BookingStackParamList, 'ChooseSlot'>;
 
 export function ChooseSlotScreen({ navigation }: Props) {
+  const insets = useSafeAreaInsets();
   const setBookingSelection = useAuthStore((state) => state.setBookingSelection);
   const [guides, setGuides] = useState<Guide[]>([]);
   const [slots, setSlots] = useState<Slot[]>([]);
@@ -81,7 +83,7 @@ export function ChooseSlotScreen({ navigation }: Props) {
 
   if (loading) {
     return (
-      <View style={styles.screen}>
+      <View style={[styles.screen, { paddingBottom: Math.max(insets.bottom, 16) + 16 }]}>
         <ScreenHeader progress={0.5} stepLabel="Alignment Conversation" />
         <View style={styles.content} testID="choose-slot-skeleton">
           <View style={styles.copy}>
@@ -108,7 +110,7 @@ export function ChooseSlotScreen({ navigation }: Props) {
   }
 
   return (
-    <View style={styles.screen}>
+    <View style={[styles.screen, { paddingBottom: Math.max(insets.bottom, 16) + 16 }]}>
       <ScreenHeader
         onBack={() => navigation.goBack()}
         progress={0.5}

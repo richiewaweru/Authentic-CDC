@@ -3,6 +3,15 @@ jest.mock(
   () => require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
 );
 
+jest.mock('react-native-safe-area-context', () => {
+  const React = require('react');
+
+  return {
+    SafeAreaProvider: ({ children }: { children: React.ReactNode }) => children,
+    useSafeAreaInsets: jest.fn(() => ({ top: 0, right: 0, bottom: 20, left: 0 })),
+  };
+});
+
 jest.mock('../src/stores/authStore', () => ({
   useAuthStore: (selector: (state: { setBookingSelection: jest.Mock }) => unknown) =>
     selector({ setBookingSelection: jest.fn() }),

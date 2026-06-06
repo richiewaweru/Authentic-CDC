@@ -3,6 +3,7 @@ import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import * as WebBrowser from 'expo-web-browser';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import {
   Inter_400Regular,
   Inter_500Medium,
@@ -64,7 +65,12 @@ export default function App() {
         return;
       }
 
-      const profileStatus = await onboardingService.getProfileStatus(session.user.id);
+      let profileStatus = null;
+      try {
+        profileStatus = await onboardingService.getProfileStatus(session.user.id);
+      } catch (error) {
+        console.error('Could not fetch profile status, proceeding without it:', error);
+      }
 
       if (!mounted) {
         return;
@@ -80,7 +86,12 @@ export default function App() {
 
         await syncSession(session);
         unsubscribe = authService.subscribeToAuthChanges((_event, nextSession) => {
-          void syncSession(nextSession);
+          syncSession(nextSession).catch((error) => {
+            console.error('Auth state sync failed:', error);
+            if (nextSession && mounted) {
+              setSession(nextSession, null);
+            }
+          });
         });
       } catch (error) {
         if (mounted) {
@@ -104,30 +115,36 @@ export default function App() {
 
   if (!interLoaded || !playfairLoaded) {
     return (
-      <View style={styles.loader}>
-        <StatusBar style="dark" />
-        <ActivityIndicator color={colors.primary} size="large" />
-      </View>
+      <SafeAreaProvider>
+        <View style={styles.loader}>
+          <StatusBar style="dark" />
+          <ActivityIndicator color={colors.primary} size="large" />
+        </View>
+      </SafeAreaProvider>
     );
   }
 
   if (authInitializationError) {
     return (
-      <View style={styles.loader}>
-        <StatusBar style="dark" />
-        <Text style={styles.errorTitle}>Configuration needed</Text>
-        <Text style={styles.errorCopy}>{authInitializationError}</Text>
-      </View>
+      <SafeAreaProvider>
+        <View style={styles.loader}>
+          <StatusBar style="dark" />
+          <Text style={styles.errorTitle}>Configuration needed</Text>
+          <Text style={styles.errorCopy}>{authInitializationError}</Text>
+        </View>
+      </SafeAreaProvider>
     );
   }
 
   return (
-    <ErrorBoundary>
-      <NavigationContainer theme={navigationTheme}>
-        <StatusBar style="dark" />
-        <RootNavigator />
-      </NavigationContainer>
-    </ErrorBoundary>
+    <SafeAreaProvider>
+      <ErrorBoundary>
+        <NavigationContainer theme={navigationTheme}>
+          <StatusBar style="dark" />
+          <RootNavigator />
+        </NavigationContainer>
+      </ErrorBoundary>
+    </SafeAreaProvider>
   );
 }
 

@@ -1,0 +1,128 @@
+
+> authentic@1.0.0 web
+> expo start --web
+
+env: load .env.local
+env: export EAS_PROJECT_ID EXPO_PUBLIC_ANDROID_PACKAGE EXPO_PUBLIC_APP_SCHEME EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID EXPO_PUBLIC_IOS_BUNDLE_IDENTIFIER EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY EXPO_PUBLIC_SUPABASE_URL
+Starting project at C:\Projects\Authentic
+Logs: C:\Projects\Authentic\.expo\dev\logs\start.log
+Starting Metro Bundler
+
+Waiting on http://localhost:8081
+Logs for your project will appear below.
+Web Bundled 16975ms index.ts (1378 modules)
+Web  INFO  %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+Web  WARN  "shadow*" style props are deprecated. Use "boxShadow".
+Web  LOG  Running application "main" with appParams:
+ {"hydrate": undefined, "rootTag": "#root"} 
+Development-level warnings: ON.
+Performance optimizations: OFF.
+Web  ERROR  [AuthApiError: Invalid Refresh Token: Refresh Token Not Found]
+Web  WARN  props.pointerEvents is deprecated. Use style.pointerEvents
+Web  ERROR  Email authentication failed: [AuthApiError: For security purposes, you can only request this after 54 seconds.]
+Web  ERROR  Email authentication failed: [AuthApiError: For security purposes, you can only request this after 57 seconds.]
+Web Bundled 135ms index.ts (1 module)
+Web  INFO  %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+Web  WARN  "shadow*" style props are deprecated. Use "boxShadow".
+Web  LOG  Running application "main" with appParams:
+ {"hydrate": undefined, "rootTag": "#root"} 
+Development-level warnings: ON.
+Performance optimizations: OFF.
+Web  ERROR  The action 'GO_BACK' was not handled by any navigator.
+
+Is there any screen to go back to?
+
+This is a development-only warning and won't be shown in production.
+Web  ERROR  The action 'GO_BACK' was not handled by any navigator.
+
+Is there any screen to go back to?
+
+This is a development-only warning and won't be shown in production.
+Web  ERROR  The action 'GO_BACK' was not handled by any navigator.
+
+Is there any screen to go back to?
+
+This is a development-only warning and won't be shown in production.
+Web  ERROR  The action 'GO_BACK' was not handled by any navigator.
+
+Is there any screen to go back to?
+
+This is a development-only warning and won't be shown in production.
+Web  ERROR  The action 'GO_BACK' was not handled by any navigator.
+
+Is there any screen to go back to?
+
+This is a development-only warning and won't be shown in production.
+Web  ERROR  The action 'GO_BACK' was not handled by any navigator.
+
+Is there any screen to go back to?
+
+This is a development-only warning and won't be shown in production.
+Web  ERROR  The action 'GO_BACK' was not handled by any navigator.
+
+Is there any screen to go back to?
+
+This is a development-only warning and won't be shown in production.
+Web  ERROR  The action 'GO_BACK' was not handled by any navigator.
+
+Is there any screen to go back to?
+
+This is a development-only warning and won't be shown in production.
+Web Bundled 108ms index.ts (1 module)
+Web  INFO  %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+Web  WARN  "shadow*" style props are deprecated. Use "boxShadow".
+Web  LOG  Running application "main" with appParams:
+ {"hydrate": undefined, "rootTag": "#root"} 
+Development-level warnings: ON.
+Performance optimizations: OFF.
+Web  ERROR  The action 'GO_BACK' was not handled by any navigator.
+
+Is there any screen to go back to?
+
+This is a development-only warning and won't be shown in production.
+Web  ERROR  The action 'GO_BACK' was not handled by any navigator.
+
+Is there any screen to go back to?
+
+This is a development-only warning and won't be shown in production.
+Web  ERROR  The action 'GO_BACK' was not handled by any navigator.
+
+Is there any screen to go back to?
+
+This is a development-only warning and won't be shown in production.
+Web Bundled 94ms index.ts (1 module)
+Web  INFO  %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+Web  WARN  "shadow*" style props are deprecated. Use "boxShadow".
+Web  LOG  Running application "main" with appParams:
+ {"hydrate": undefined, "rootTag": "#root"} 
+Development-level warnings: ON.
+Performance optimizations: OFF.
+Web  ERROR  The action 'GO_BACK' was not handled by any navigator.
+
+Is there any screen to go back to?
+
+This is a development-only warning and won't be shown in production.
+Web Bundled 105ms index.ts (1 module)
+Web  INFO  %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+Web  WARN  "shadow*" style props are deprecated. Use "boxShadow".
+Web  LOG  Running application "main" with appParams:
+ {"hydrate": undefined, "rootTag": "#root"} 
+Development-level warnings: ON.
+Performance optimizations: OFF.
+Web  WARN  props.pointerEvents is deprecated. Use style.pointerEvents
+Web Bundled 133ms index.ts (1 module)
+Web  INFO  %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+Web  WARN  "shadow*" style props are deprecated. Use "boxShadow".
+Web  LOG  Running application "main" with appParams:
+ {"hydrate": undefined, "rootTag": "#root"} 
+Development-level warnings: ON.
+Performance optimizations: OFF.
+Web  WARN  props.pointerEvents is deprecated. Use style.pointerEvents
+Web Bundled 232ms index.ts (1 module)
+Web  INFO  %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+Web  WARN  "shadow*" style props are deprecated. Use "boxShadow".
+Web  LOG  Running application "main" with appParams:
+ {"hydrate": undefined, "rootTag": "#root"} 
+Development-level warnings: ON.
+Performance optimizations: OFF.
+Web  WARN  props.pointerEvents is deprecated. Use style.pointerEvents

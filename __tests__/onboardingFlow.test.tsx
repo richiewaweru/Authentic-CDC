@@ -4,6 +4,15 @@ const mockedPersistence = {
   clearProgress: jest.fn().mockResolvedValue(undefined),
 };
 
+jest.mock('react-native-safe-area-context', () => {
+  const React = require('react');
+
+  return {
+    SafeAreaProvider: ({ children }: { children: React.ReactNode }) => children,
+    useSafeAreaInsets: jest.fn(() => ({ top: 0, right: 0, bottom: 20, left: 0 })),
+  };
+});
+
 jest.mock('../src/hooks/useOnboardingPersistence', () => ({
   useOnboardingPersistence: () => mockedPersistence,
 }));

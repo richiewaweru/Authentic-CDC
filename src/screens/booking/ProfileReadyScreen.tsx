@@ -1,19 +1,42 @@
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { ScreenHeader } from '../../components/ui/ScreenHeader';
 import { BookingStackParamList } from '../../navigation/types';
+import { useAuthStore } from '../../stores/authStore';
 import { colors, spacing, typography } from '../../theme';
 
 type Props = NativeStackScreenProps<BookingStackParamList, 'ProfileReady'>;
 
 export function ProfileReadyScreen({ navigation }: Props) {
+  const insets = useSafeAreaInsets();
+  const signOut = useAuthStore((state) => state.signOut);
+
+  const handleSignOut = () => {
+    Alert.alert('Sign out', 'Are you sure you want to sign out of Authentic?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Sign Out',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await signOut();
+          } catch (error) {
+            console.error('Sign out failed:', error);
+            Alert.alert('Could not sign out', 'Please try again.');
+          }
+        },
+      },
+    ]);
+  };
+
   return (
-    <View style={styles.screen}>
+    <View style={[styles.screen, { paddingBottom: Math.max(insets.bottom, 16) + 16 }]}>
       <ScreenHeader
         onBack={() => navigation.goBack()}
         progress={0.2}
@@ -63,8 +86,23 @@ export function ProfileReadyScreen({ navigation }: Props) {
           onPress={() => navigation.navigate('ConversationInfo')}
           title="Continue to Alignment Conversation"
         />
-        <TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => {
+            Alert.alert(
+              'Alignment Profile',
+              'Your full Alignment Profile will be available to review and edit in your Profile tab once Community Access is granted.',
+            );
+          }}
+        >
           <Text style={styles.link}>Review Alignment Profile</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          accessibilityLabel="Sign out"
+          accessibilityRole="button"
+          onPress={handleSignOut}
+          style={styles.signOutButton}
+        >
+          <Text style={styles.signOutText}>Sign Out</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -154,5 +192,16 @@ const styles = StyleSheet.create({
     ...typography.bodySm,
     color: colors.primaryDark,
     textAlign: 'center',
+  },
+  signOutButton: {
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    marginTop: spacing.xl,
+  },
+  signOutText: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 14,
+    lineHeight: 20,
+    color: colors.error,
   },
 });

@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors, spacing } from '../../theme';
 
@@ -9,6 +10,8 @@ interface PinnedFooterProps {
 }
 
 export function PinnedFooter({ children }: PinnedFooterProps) {
+  const insets = useSafeAreaInsets();
+
   return (
     <View style={styles.container}>
       <LinearGradient
@@ -16,7 +19,14 @@ export function PinnedFooter({ children }: PinnedFooterProps) {
         pointerEvents="none"
         style={styles.gradient}
       />
-      <View style={styles.content}>{children}</View>
+      <View
+        style={[
+          styles.content,
+          { paddingBottom: Math.max(insets.bottom, 16) + 16 },
+        ]}
+      >
+        {children}
+      </View>
     </View>
   );
 }

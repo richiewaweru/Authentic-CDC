@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Alert, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BookingSummary } from '../../components/ui/BookingSummary';
 import { Button } from '../../components/ui/Button';
@@ -16,6 +17,7 @@ import { colors, spacing, typography } from '../../theme';
 type Props = NativeStackScreenProps<BookingStackParamList, 'ConfirmBooking'>;
 
 export function ConfirmBookingScreen({ navigation }: Props) {
+  const insets = useSafeAreaInsets();
   const selection = useAuthStore((state) => state.bookingSelection);
   const confirmBooking = useAuthStore((state) => state.confirmBooking);
   const [loading, setLoading] = useState(false);
@@ -48,7 +50,7 @@ export function ConfirmBookingScreen({ navigation }: Props) {
 
   if (!selection) {
     return (
-      <View style={styles.screen}>
+      <View style={[styles.screen, { paddingBottom: Math.max(insets.bottom, 16) + 16 }]}>
         <Text style={styles.headline}>Confirm Your Place</Text>
         <Text style={styles.subtitle}>
           Choose an Alignment Conversation time first so we can confirm your place.
@@ -59,7 +61,7 @@ export function ConfirmBookingScreen({ navigation }: Props) {
   }
 
   return (
-    <View style={styles.screen}>
+    <View style={[styles.screen, { paddingBottom: Math.max(insets.bottom, 16) + 16 }]}>
       <ScreenHeader
         onBack={() => navigation.goBack()}
         progress={0.75}
