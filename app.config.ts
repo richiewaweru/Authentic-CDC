@@ -4,6 +4,7 @@ const appScheme = process.env.EXPO_PUBLIC_APP_SCHEME ?? 'authenticcdc';
 const appSlug = 'authentic-cdc';
 const bundleIdentifier = process.env.EXPO_PUBLIC_IOS_BUNDLE_IDENTIFIER ?? 'com.authenticcdc.app';
 const androidPackage = process.env.EXPO_PUBLIC_ANDROID_PACKAGE ?? 'com.authenticcdc.app';
+const easProjectId = process.env.EAS_PROJECT_ID ?? '7139d805-d575-4749-b7ea-3130f07dfa27';
 const googleIosUrlScheme = process.env.GOOGLE_IOS_URL_SCHEME;
 const googleSignInPlugin: [string, { iosUrlScheme: string }] | null = googleIosUrlScheme
   ? ['@react-native-google-signin/google-signin', { iosUrlScheme: googleIosUrlScheme }]
@@ -45,7 +46,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   extra: {
     appScheme,
     eas: {
-      projectId: process.env.EAS_PROJECT_ID,
+      projectId: easProjectId,
     },
   },
 });
