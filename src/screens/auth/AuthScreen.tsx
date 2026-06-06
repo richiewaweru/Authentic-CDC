@@ -36,8 +36,8 @@ export function AuthScreen({ navigation, route }: Props) {
           ? await authService.signInWithApple()
           : await authService.signInWithGoogle();
 
-      if (session && Platform.OS !== 'web') {
-        Alert.alert('Signed in', 'You are signed in. We are preparing your Alignment Profile.');
+      if (!session) {
+        return;
       }
     } catch (error) {
       console.error(`Authentication with ${method} failed:`, error);

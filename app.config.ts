@@ -4,6 +4,10 @@ const appScheme = process.env.EXPO_PUBLIC_APP_SCHEME ?? 'authenticcdc';
 const appSlug = 'authentic';
 const bundleIdentifier = process.env.EXPO_PUBLIC_IOS_BUNDLE_IDENTIFIER ?? 'com.richiewaweru.authenticcdc';
 const androidPackage = process.env.EXPO_PUBLIC_ANDROID_PACKAGE ?? 'com.richiewaweru.authenticcdc';
+const googleIosUrlScheme = process.env.GOOGLE_IOS_URL_SCHEME;
+const googleSignInPlugin: [string, { iosUrlScheme: string }] | null = googleIosUrlScheme
+  ? ['@react-native-google-signin/google-signin', { iosUrlScheme: googleIosUrlScheme }]
+  : null;
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
@@ -36,6 +40,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     'expo-status-bar',
     ['expo-web-browser', { experimentalLauncherActivity: false }],
     'expo-secure-store',
+    ...(googleSignInPlugin ? [googleSignInPlugin] : []),
   ],
   extra: {
     appScheme,

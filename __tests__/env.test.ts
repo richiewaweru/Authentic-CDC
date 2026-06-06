@@ -1,8 +1,12 @@
-describe('env config', () => {
+describe('env helpers', () => {
   const originalEnv = process.env;
 
-  beforeEach(() => {
+  function loadEnvModule() {
     jest.resetModules();
+    return require('../src/config/env') as typeof import('../src/config/env');
+  }
+
+  beforeEach(() => {
     process.env = { ...originalEnv };
   });
 
@@ -10,30 +14,19 @@ describe('env config', () => {
     process.env = originalEnv;
   });
 
-  it('returns the configured app scheme', () => {
-    process.env.EXPO_PUBLIC_APP_SCHEME = 'authenticcdc-test';
-    let envModule: typeof import('../src/config/env');
+  it('returns the Google web client id when configured', () => {
+    process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID = 'google-web-client-id';
+    const { getGoogleWebClientId } = loadEnvModule();
 
-    jest.isolateModules(() => {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      envModule = require('../src/config/env');
-    });
-
-    expect(envModule!.getAppScheme()).toBe('authenticcdc-test');
+    expect(getGoogleWebClientId()).toBe('google-web-client-id');
   });
 
-  it('throws when required supabase values are missing', () => {
-    delete process.env.EXPO_PUBLIC_SUPABASE_URL;
-    delete process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-    let envModule: typeof import('../src/config/env');
+  it('throws when the Google web client id is missing', () => {
+    delete process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+    const { getGoogleWebClientId } = loadEnvModule();
 
-    jest.isolateModules(() => {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      envModule = require('../src/config/env');
-    });
-
-    expect(() => envModule!.getSupabasePublicConfig()).toThrow(
-      'Missing required environment variable: EXPO_PUBLIC_SUPABASE_URL',
+    expect(() => getGoogleWebClientId()).toThrow(
+      'Missing required environment variable: EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID',
     );
   });
 });

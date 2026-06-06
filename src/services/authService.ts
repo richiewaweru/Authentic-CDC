@@ -7,6 +7,7 @@ import { supabase } from '../config/supabase';
 import { getAppScheme } from '../config/env';
 import type { AuthUser, EmailAuthResult } from '../types/auth';
 import { buildDisplayNameFromEmail, parseAuthCallbackUrl } from './authUtils';
+import { signInWithNativeGoogle } from './nativeGoogleAuth';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -215,6 +216,10 @@ export const authService = {
   },
 
   async signInWithGoogle() {
+    if (Platform.OS === 'android') {
+      return signInWithNativeGoogle();
+    }
+
     return completeOAuthSession('google');
   },
 
