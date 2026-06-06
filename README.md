@@ -48,17 +48,27 @@ flowchart LR
 
 `EXPO_PUBLIC_*` values are bundled into the app and should be treated as public. Do not place Google client secrets, Apple private keys, or Supabase service-role keys in Expo env files.
 
+The checked-in Expo identity defaults are:
+
+- `slug`: `authentic-cdc`
+- `scheme`: `authenticcdc`
+- `ios.bundleIdentifier`: `com.authenticcdc.app`
+- `android.package`: `com.authenticcdc.app`
+
 For EAS remote builds, set the same values in EAS environments because `.env.local` is not uploaded to EAS builders. Example preview setup:
 
 ```bash
 eas env:create --environment preview --name EXPO_PUBLIC_SUPABASE_URL --value "https://your-project.supabase.co"
 eas env:create --environment preview --name EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY --value "your-supabase-publishable-key"
 eas env:create --environment preview --name EXPO_PUBLIC_APP_SCHEME --value "authenticcdc"
-eas env:create --environment preview --name EXPO_PUBLIC_ANDROID_PACKAGE --value "com.richiewaweru.authenticcdc"
+eas env:create --environment preview --name EXPO_PUBLIC_IOS_BUNDLE_IDENTIFIER --value "com.authenticcdc.app"
+eas env:create --environment preview --name EXPO_PUBLIC_ANDROID_PACKAGE --value "com.authenticcdc.app"
 eas env:create --environment preview --name EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID --value "your-google-web-client-id.apps.googleusercontent.com"
 ```
 
-Android preview APKs and production app bundles are configured in [eas.json](/C:/Projects/Authentic/eas.json).
+`development` builds reuse the `preview` EAS environment so they pick up the same remote Expo env values until a dedicated development environment is introduced.
+
+Development builds, Android preview APKs, and production app bundles are configured in [eas.json](/C:/Projects/Authentic/eas.json).
 
 ## Expected Supabase Tables
 

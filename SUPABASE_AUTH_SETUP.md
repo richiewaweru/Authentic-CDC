@@ -9,8 +9,8 @@ EXPO_PUBLIC_APP_SCHEME=authenticcdc
 EXPO_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
 EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_your_key_here
 EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=your-google-web-client-id.apps.googleusercontent.com
-EXPO_PUBLIC_IOS_BUNDLE_IDENTIFIER=com.richiewaweru.authenticcdc
-EXPO_PUBLIC_ANDROID_PACKAGE=com.richiewaweru.authenticcdc
+EXPO_PUBLIC_IOS_BUNDLE_IDENTIFIER=com.authenticcdc.app
+EXPO_PUBLIC_ANDROID_PACKAGE=com.authenticcdc.app
 ```
 
 Only `EXPO_PUBLIC_*` values belong in the app. Do not place Google client secrets, Apple private keys, or Supabase service-role keys in Expo env files.
@@ -23,17 +23,21 @@ Example preview environment commands:
 eas env:create --environment preview --name EXPO_PUBLIC_SUPABASE_URL --value "https://your-project.supabase.co"
 eas env:create --environment preview --name EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY --value "your-supabase-publishable-key"
 eas env:create --environment preview --name EXPO_PUBLIC_APP_SCHEME --value "authenticcdc"
-eas env:create --environment preview --name EXPO_PUBLIC_ANDROID_PACKAGE --value "com.richiewaweru.authenticcdc"
+eas env:create --environment preview --name EXPO_PUBLIC_IOS_BUNDLE_IDENTIFIER --value "com.authenticcdc.app"
+eas env:create --environment preview --name EXPO_PUBLIC_ANDROID_PACKAGE --value "com.authenticcdc.app"
 eas env:create --environment preview --name EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID --value "your-google-web-client-id.apps.googleusercontent.com"
 ```
+
+The `development` EAS build profile reuses the `preview` environment so dev-client builds resolve the same remote Expo env values unless you later add a dedicated development environment.
 
 ## Expo identity values
 
 This managed Expo app now uses `app.config.ts` as the source of truth for app identity.
 
+- `slug`: `authentic-cdc`
 - `scheme`: `authenticcdc`
-- `ios.bundleIdentifier`: `com.richiewaweru.authenticcdc`
-- `android.package`: `com.richiewaweru.authenticcdc`
+- `ios.bundleIdentifier`: `com.authenticcdc.app`
+- `android.package`: `com.authenticcdc.app`
 
 If Google asks for a `manifest.xml`-style identifier during Android setup, the relevant value for this app is the Android package name above. In this workflow you do not hand-edit `AndroidManifest.xml`.
 
@@ -68,13 +72,13 @@ You will typically need:
 - App name and branding
 - Support email
 - An existing Web OAuth client ID and client secret for the Supabase Google provider
-- A new Android OAuth client using package name `com.richiewaweru.authenticcdc`
+- A new Android OAuth client using package name `com.authenticcdc.app`
 - Authorized redirect URI from the Supabase Google provider page
 
 For this managed Expo app, the key app identity value you need to keep consistent is:
 
 ```text
-com.richiewaweru.authenticcdc
+com.authenticcdc.app
 ```
 
 Use the Web OAuth client ID in two places:
@@ -96,7 +100,7 @@ If native Google sign-in later reports client or audience mismatches, confirm:
 
 - `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` matches the Web OAuth client ID
 - Supabase Google provider uses the same Web client ID and secret
-- the Android OAuth client package name matches `com.richiewaweru.authenticcdc`
+- the Android OAuth client package name matches `com.authenticcdc.app`
 - the Android OAuth client SHA-1 matches the EAS keystore used for the APK build
 
 ## Apple Developer
@@ -105,7 +109,7 @@ To enable Apple auth later on iOS hardware/builds, you need:
 
 - Apple Developer account
 - Team ID
-- App ID using `com.richiewaweru.authenticcdc`
+- App ID using `com.authenticcdc.app`
 - Sign in with Apple capability enabled
 - Apple key / key ID / private key configured in Supabase
 

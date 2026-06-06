@@ -1,7 +1,16 @@
 {
+  "cli": {
+    "version": ">= 8.0.0"
+  },
   "build": {
+    "development": {
+      "environment": "preview",
+      "developmentClient": true,
+      "distribution": "internal"
+    },
     "preview": {
       "environment": "preview",
+      "distribution": "internal",
       "android": {
         "buildType": "apk"
       }

@@ -1,9 +1,9 @@
 import type { ConfigContext, ExpoConfig } from 'expo/config';
 
 const appScheme = process.env.EXPO_PUBLIC_APP_SCHEME ?? 'authenticcdc';
-const appSlug = 'authentic';
-const bundleIdentifier = process.env.EXPO_PUBLIC_IOS_BUNDLE_IDENTIFIER ?? 'com.richiewaweru.authenticcdc';
-const androidPackage = process.env.EXPO_PUBLIC_ANDROID_PACKAGE ?? 'com.richiewaweru.authenticcdc';
+const appSlug = 'authentic-cdc';
+const bundleIdentifier = process.env.EXPO_PUBLIC_IOS_BUNDLE_IDENTIFIER ?? 'com.authenticcdc.app';
+const androidPackage = process.env.EXPO_PUBLIC_ANDROID_PACKAGE ?? 'com.authenticcdc.app';
 const googleIosUrlScheme = process.env.GOOGLE_IOS_URL_SCHEME;
 const googleSignInPlugin: [string, { iosUrlScheme: string }] | null = googleIosUrlScheme
   ? ['@react-native-google-signin/google-signin', { iosUrlScheme: googleIosUrlScheme }]
