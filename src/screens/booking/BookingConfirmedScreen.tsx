@@ -1,9 +1,9 @@
 import React from 'react';
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
+import { ScreenLayout } from '../../components/layout';
 import { BookingSummary } from '../../components/ui/BookingSummary';
 import { Button } from '../../components/ui/Button';
 import { ScreenHeader } from '../../components/ui/ScreenHeader';
@@ -14,27 +14,49 @@ import { colors, spacing, typography } from '../../theme';
 type Props = NativeStackScreenProps<BookingStackParamList, 'BookingConfirmed'>;
 
 export function BookingConfirmedScreen({ navigation }: Props) {
-  const insets = useSafeAreaInsets();
   const confirmedBooking = useAuthStore((state) => state.confirmedBooking);
 
   if (!confirmedBooking) {
     return (
-      <View style={[styles.screen, { paddingBottom: Math.max(insets.bottom, 16) + 16 }]}>
+      <ScreenLayout>
         <Text style={styles.headline}>Your Alignment Conversation is Confirmed</Text>
         <Text style={styles.subtitle}>
           Your Alignment Conversation details will appear here once confirmed.
         </Text>
-      </View>
+      </ScreenLayout>
     );
   }
 
   return (
-    <View style={[styles.screen, { paddingBottom: Math.max(insets.bottom, 16) + 16 }]}>
-      <ScreenHeader
-        onBack={() => navigation.goBack()}
-        progress={1}
-        stepLabel="Booking Confirmed"
-      />
+    <ScreenLayout
+      footer={
+        <>
+          <Button
+            onPress={() => Alert.alert('Calendar support', 'Calendar export will be connected later.')}
+            title="Add to Calendar"
+            variant="outlined"
+          />
+          <TouchableOpacity
+            accessibilityLabel="Connect Google Calendar to sync automatically"
+            accessibilityRole="button"
+            activeOpacity={0.8}
+            onPress={() =>
+              Alert.alert('Google Calendar sync', 'Google Calendar sync will be available soon.')
+            }
+          >
+            <Text style={styles.link}>Or connect Google Calendar to sync automatically</Text>
+          </TouchableOpacity>
+          <Button onPress={() => navigation.navigate('PendingHome')} title="Go to Pending Access" />
+        </>
+      }
+      header={
+        <ScreenHeader
+          onBack={() => navigation.goBack()}
+          progress={1}
+          stepLabel="Booking Confirmed"
+        />
+      }
+    >
       <View style={styles.content}>
         <View style={styles.hero}>
           <View style={styles.checkCircle}>
@@ -48,38 +70,11 @@ export function BookingConfirmedScreen({ navigation }: Props) {
 
         <BookingSummary booking={confirmedBooking} />
       </View>
-
-      <View style={styles.footer}>
-        <Button
-          onPress={() => Alert.alert('Calendar support', 'Calendar export will be connected later.')}
-          title="Add to Calendar"
-          variant="outlined"
-        />
-        <TouchableOpacity
-          accessibilityLabel="Connect Google Calendar to sync automatically"
-          accessibilityRole="button"
-          activeOpacity={0.8}
-          onPress={() =>
-            Alert.alert('Google Calendar sync', 'Google Calendar sync will be available soon.')
-          }
-        >
-          <Text style={styles.link}>Or connect Google Calendar to sync automatically</Text>
-        </TouchableOpacity>
-        <Button onPress={() => navigation.navigate('PendingHome')} title="Go to Pending Access" />
-      </View>
-    </View>
+    </ScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: colors.background,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.xl,
-    justifyContent: 'space-between',
-  },
   content: {
     gap: spacing.xl,
   },
@@ -107,9 +102,6 @@ const styles = StyleSheet.create({
     ...typography.bodyMd,
     color: colors.onSurfaceVariant,
     textAlign: 'center',
-  },
-  footer: {
-    gap: spacing.md,
   },
   link: {
     ...typography.bodySm,

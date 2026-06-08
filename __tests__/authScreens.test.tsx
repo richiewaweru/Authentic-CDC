@@ -16,6 +16,21 @@ jest.mock('@expo/vector-icons', () => {
   };
 });
 
+jest.mock('expo-linear-gradient', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+
+  return {
+    LinearGradient: ({
+      children,
+      style,
+    }: {
+      children?: React.ReactNode;
+      style?: unknown;
+    }) => <View style={style}>{children}</View>,
+  };
+});
+
 const mockSignInWithApple = jest.fn();
 const mockSignInWithGoogle = jest.fn();
 const mockSignInWithEmail = jest.fn();

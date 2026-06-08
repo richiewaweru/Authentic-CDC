@@ -2,8 +2,8 @@ import React from 'react';
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ScreenLayout } from '../../components/layout';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { ScreenHeader } from '../../components/ui/ScreenHeader';
@@ -14,7 +14,6 @@ import { colors, spacing, typography } from '../../theme';
 type Props = NativeStackScreenProps<BookingStackParamList, 'ProfileReady'>;
 
 export function ProfileReadyScreen({ navigation }: Props) {
-  const insets = useSafeAreaInsets();
   const signOut = useAuthStore((state) => state.signOut);
 
   const handleSignOut = () => {
@@ -36,12 +35,41 @@ export function ProfileReadyScreen({ navigation }: Props) {
   };
 
   return (
-    <View style={[styles.screen, { paddingBottom: Math.max(insets.bottom, 16) + 16 }]}>
-      <ScreenHeader
-        onBack={() => navigation.goBack()}
-        progress={0.2}
-        stepLabel="Profile Complete"
-      />
+    <ScreenLayout
+      footer={
+        <>
+          <Button
+            onPress={() => navigation.navigate('ConversationInfo')}
+            title="Continue to Alignment Conversation"
+          />
+          <TouchableOpacity
+            onPress={() => {
+              Alert.alert(
+                'Alignment Profile',
+                'Your full Alignment Profile will be available to review and edit in your Profile tab once Community Access is granted.',
+              );
+            }}
+          >
+            <Text style={styles.link}>Review Alignment Profile</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            accessibilityLabel="Sign out"
+            accessibilityRole="button"
+            onPress={handleSignOut}
+            style={styles.signOutButton}
+          >
+            <Text style={styles.signOutText}>Sign Out</Text>
+          </TouchableOpacity>
+        </>
+      }
+      header={
+        <ScreenHeader
+          onBack={() => navigation.goBack()}
+          progress={0.2}
+          stepLabel="Profile Complete"
+        />
+      }
+    >
       <View style={styles.content}>
         <Card style={styles.card}>
           <View style={styles.checkCircle}>
@@ -80,44 +108,11 @@ export function ProfileReadyScreen({ navigation }: Props) {
           </View>
         </View>
       </View>
-
-      <View style={styles.footer}>
-        <Button
-          onPress={() => navigation.navigate('ConversationInfo')}
-          title="Continue to Alignment Conversation"
-        />
-        <TouchableOpacity
-          onPress={() => {
-            Alert.alert(
-              'Alignment Profile',
-              'Your full Alignment Profile will be available to review and edit in your Profile tab once Community Access is granted.',
-            );
-          }}
-        >
-          <Text style={styles.link}>Review Alignment Profile</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          accessibilityLabel="Sign out"
-          accessibilityRole="button"
-          onPress={handleSignOut}
-          style={styles.signOutButton}
-        >
-          <Text style={styles.signOutText}>Sign Out</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+    </ScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: colors.background,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.xl,
-    justifyContent: 'space-between',
-  },
   content: {
     gap: spacing.xl,
   },
@@ -184,9 +179,6 @@ const styles = StyleSheet.create({
     ...typography.bodySm,
     color: colors.onSurface,
     flex: 1,
-  },
-  footer: {
-    gap: spacing.md,
   },
   link: {
     ...typography.bodySm,

@@ -4,8 +4,6 @@ import {
   Alert,
   Animated,
   BackHandler,
-  KeyboardAvoidingView,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -13,8 +11,8 @@ import {
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
+import { ScreenLayout } from '../../components/layout';
 import { Button } from '../../components/ui/Button';
-import { PinnedFooter } from '../../components/ui/PinnedFooter';
 import { ScreenHeader } from '../../components/ui/ScreenHeader';
 import { useOnboardingPersistence } from '../../hooks/useOnboardingPersistence';
 import { onboardingSchema } from '../../lib/validation';
@@ -264,52 +262,44 @@ export function OnboardingFlow({ navigation }: Props) {
   }
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={styles.screen}
-    >
-      <ScreenHeader
-        eyebrow={currentMeta.eyebrow}
-        onBack={handleBack}
-        progress={currentMeta.progress}
-        stepLabel={currentMeta.label}
-      />
-      <Animated.View style={{ flex: 1, transform: [{ translateX: slideAnim }] }}>
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-          ref={scrollRef}
-          showsVerticalScrollIndicator={false}
-        >
-          {content}
-        </ScrollView>
-      </Animated.View>
-      <PinnedFooter>
-        <Button
-          loading={state.step === 6 && submitting}
-          onPress={() => void handleContinue()}
-          title={currentMeta.cta}
+    <ScreenLayout
+      footer={
+        <>
+          <Button
+            loading={state.step === 6 && submitting}
+            onPress={() => void handleContinue()}
+            title={currentMeta.cta}
+          />
+          {state.step === 0 ? (
+            <Text style={styles.helper}>Your progress is saved as you go.</Text>
+          ) : null}
+        </>
+      }
+      header={
+        <ScreenHeader
+          eyebrow={currentMeta.eyebrow}
+          onBack={handleBack}
+          progress={currentMeta.progress}
+          stepLabel={currentMeta.label}
         />
-        {state.step === 0 ? (
-          <Text style={styles.helper}>Your progress is saved as you go.</Text>
-        ) : null}
-      </PinnedFooter>
-    </KeyboardAvoidingView>
+      }
+      scrollContentStyle={styles.scrollContent}
+      scrollRef={scrollRef}
+    >
+      <Animated.View style={[styles.stepContent, { transform: [{ translateX: slideAnim }] }]}>
+        {content}
+      </Animated.View>
+    </ScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: colors.background,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.lg,
-  },
   scrollContent: {
-    paddingTop: spacing.lg,
     paddingBottom: spacing.xxl * 2,
     gap: spacing.lg,
+  },
+  stepContent: {
+    width: '100%',
   },
   helper: {
     ...typography.bodySm,

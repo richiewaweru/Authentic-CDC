@@ -1,8 +1,8 @@
 import React from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ScreenLayout } from '../../components/layout';
 import { Button } from '../../components/ui/Button';
 import { colors, spacing, typography } from '../../theme';
 import { AuthStackParamList } from '../../navigation/types';
@@ -10,10 +10,23 @@ import { AuthStackParamList } from '../../navigation/types';
 type Props = NativeStackScreenProps<AuthStackParamList, 'Welcome'>;
 
 export function WelcomeScreen({ navigation }: Props) {
-  const insets = useSafeAreaInsets();
-
   return (
-    <View style={[styles.screen, { paddingBottom: Math.max(insets.bottom, 16) + 16 }]}>
+    <ScreenLayout
+      footer={
+        <>
+          <Button title="Join the Community" onPress={() => navigation.navigate('Auth', { mode: 'join' })} />
+          <Button
+            title="Sign In"
+            onPress={() => navigation.navigate('Auth', { mode: 'signIn' })}
+            variant="outlined"
+          />
+          <Text style={styles.footnote}>
+            By joining, you agree to our terms of stewardship and community values.
+          </Text>
+        </>
+      }
+      scrollContentStyle={styles.scrollContent}
+    >
       <View style={styles.brandBlock}>
         <Image
           accessibilityLabel="Authentic logo"
@@ -35,30 +48,13 @@ export function WelcomeScreen({ navigation }: Props) {
         <Text style={styles.bullet}>NOT JUST MESSAGING.</Text>
         <Text style={styles.bullet}>Real people. Real values. Real connection.</Text>
       </View>
-
-      <View style={styles.footer}>
-        <Button title="Join the Community" onPress={() => navigation.navigate('Auth', { mode: 'join' })} />
-        <Button
-          title="Sign In"
-          onPress={() => navigation.navigate('Auth', { mode: 'signIn' })}
-          variant="outlined"
-        />
-        <Text style={styles.footnote}>
-          By joining, you agree to our terms of stewardship and community values.
-        </Text>
-      </View>
-    </View>
+    </ScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: colors.background,
-    paddingHorizontal: spacing.lg,
+  scrollContent: {
     paddingTop: spacing.xxl + spacing.lg,
-    paddingBottom: spacing.xl,
-    justifyContent: 'space-between',
   },
   brandBlock: {
     alignItems: 'center',
@@ -92,9 +88,6 @@ const styles = StyleSheet.create({
     ...typography.labelMd,
     color: colors.primaryDark,
     textAlign: 'center',
-  },
-  footer: {
-    gap: spacing.md,
   },
   footnote: {
     ...typography.labelSm,

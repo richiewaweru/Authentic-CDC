@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Alert, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ScreenLayout } from '../../components/layout';
 import { BookingSummary } from '../../components/ui/BookingSummary';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
@@ -17,7 +17,6 @@ import { colors, spacing, typography } from '../../theme';
 type Props = NativeStackScreenProps<BookingStackParamList, 'ConfirmBooking'>;
 
 export function ConfirmBookingScreen({ navigation }: Props) {
-  const insets = useSafeAreaInsets();
   const selection = useAuthStore((state) => state.bookingSelection);
   const confirmBooking = useAuthStore((state) => state.confirmBooking);
   const [loading, setLoading] = useState(false);
@@ -50,23 +49,36 @@ export function ConfirmBookingScreen({ navigation }: Props) {
 
   if (!selection) {
     return (
-      <View style={[styles.screen, { paddingBottom: Math.max(insets.bottom, 16) + 16 }]}>
+      <ScreenLayout>
         <Text style={styles.headline}>Confirm Your Place</Text>
         <Text style={styles.subtitle}>
           Choose an Alignment Conversation time first so we can confirm your place.
         </Text>
         <Button onPress={() => navigation.navigate('ChooseSlot')} title="Choose a Time" />
-      </View>
+      </ScreenLayout>
     );
   }
 
   return (
-    <View style={[styles.screen, { paddingBottom: Math.max(insets.bottom, 16) + 16 }]}>
-      <ScreenHeader
-        onBack={() => navigation.goBack()}
-        progress={0.75}
-        stepLabel="Confirm Your Place"
-      />
+    <ScreenLayout
+      footer={
+        <>
+          <Button
+            onPress={() => navigation.navigate('ChooseSlot')}
+            title="Change Time"
+            variant="outlined"
+          />
+          <Button loading={loading} onPress={() => void handlePay()} title="Pay Confirmation Fee" />
+        </>
+      }
+      header={
+        <ScreenHeader
+          onBack={() => navigation.goBack()}
+          progress={0.75}
+          stepLabel="Confirm Your Place"
+        />
+      }
+    >
       <View style={styles.content}>
         <View style={styles.copy}>
           <Text style={styles.headline}>Confirm Your Place</Text>
@@ -88,28 +100,11 @@ export function ConfirmBookingScreen({ navigation }: Props) {
           <Text style={styles.footer}>Secure checkout powered by Stripe</Text>
         </Card>
       </View>
-
-      <View style={styles.footerActions}>
-        <Button
-          onPress={() => navigation.navigate('ChooseSlot')}
-          title="Change Time"
-          variant="outlined"
-        />
-        <Button loading={loading} onPress={() => void handlePay()} title="Pay Confirmation Fee" />
-      </View>
-    </View>
+    </ScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: colors.background,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.xl,
-    justifyContent: 'space-between',
-  },
   content: {
     gap: spacing.xl,
   },
@@ -152,8 +147,5 @@ const styles = StyleSheet.create({
   footer: {
     ...typography.bodySm,
     color: colors.outline,
-  },
-  footerActions: {
-    gap: spacing.md,
   },
 });

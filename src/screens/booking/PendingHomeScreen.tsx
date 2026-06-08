@@ -2,8 +2,8 @@ import React from 'react';
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ScreenLayout } from '../../components/layout';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { GuideCard } from '../../components/ui/GuideCard';
@@ -25,7 +25,6 @@ const statusSteps = [
 ] as const;
 
 export function PendingHomeScreen({ navigation }: Props) {
-  const insets = useSafeAreaInsets();
   const booking = useAuthStore((state) => state.confirmedBooking);
   const rescheduleBooking = useAuthStore((state) => state.rescheduleBooking);
   const signOut = useAuthStore((state) => state.signOut);
@@ -82,13 +81,33 @@ export function PendingHomeScreen({ navigation }: Props) {
 
   if (!booking) {
     return (
-      <View style={[styles.screen, { paddingBottom: Math.max(insets.bottom, 16) + 16 }]}>
+      <ScreenLayout
+        footer={
+          <>
+            <Button onPress={() => navigation.navigate('ChooseSlot')} title="Choose a Time" />
+            <TouchableOpacity
+              accessibilityLabel="Sign out"
+              accessibilityRole="button"
+              onPress={handleSignOut}
+              style={styles.signOutButton}
+            >
+              <Text style={styles.signOutText}>Sign Out</Text>
+            </TouchableOpacity>
+          </>
+        }
+      >
         <Text style={styles.pendingLabel}>Pending Access</Text>
         <Text style={styles.headline}>Schedule Your Alignment Conversation</Text>
         <Text style={styles.subtitle}>
           Choose an Alignment Conversation time to continue toward Community Access.
         </Text>
-        <Button onPress={() => navigation.navigate('ChooseSlot')} title="Choose a Time" />
+      </ScreenLayout>
+    );
+  }
+
+  return (
+    <ScreenLayout
+      footer={
         <TouchableOpacity
           accessibilityLabel="Sign out"
           accessibilityRole="button"
@@ -97,13 +116,9 @@ export function PendingHomeScreen({ navigation }: Props) {
         >
           <Text style={styles.signOutText}>Sign Out</Text>
         </TouchableOpacity>
-      </View>
-    );
-  }
-
-  return (
-    <View style={[styles.screen, { paddingBottom: Math.max(insets.bottom, 16) + 16 }]}>
-      <ScreenHeader onBack={() => navigation.goBack()} />
+      }
+      header={<ScreenHeader onBack={() => navigation.goBack()} />}
+    >
       <View style={styles.content}>
         <View style={styles.copy}>
           <Text style={styles.pendingLabel}>Pending Access</Text>
@@ -176,29 +191,12 @@ export function PendingHomeScreen({ navigation }: Props) {
             ))}
           </View>
         </View>
-
-        <TouchableOpacity
-          accessibilityLabel="Sign out"
-          accessibilityRole="button"
-          onPress={handleSignOut}
-          style={styles.signOutButton}
-        >
-          <Text style={styles.signOutText}>Sign Out</Text>
-        </TouchableOpacity>
       </View>
-    </View>
+    </ScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: colors.background,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.xl,
-    justifyContent: 'space-between',
-  },
   content: {
     gap: spacing.xl,
   },
@@ -285,8 +283,7 @@ const styles = StyleSheet.create({
   signOutButton: {
     alignItems: 'center',
     paddingVertical: spacing.md,
-    marginTop: spacing.xl,
-    marginBottom: spacing.xl,
+    marginTop: spacing.lg,
   },
   signOutText: {
     fontFamily: 'Inter_400Regular',

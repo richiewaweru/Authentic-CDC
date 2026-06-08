@@ -1,9 +1,9 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
+import { ScreenLayout } from '../../components/layout';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { ScreenHeader } from '../../components/ui/ScreenHeader';
@@ -13,15 +13,17 @@ import { colors, spacing, typography } from '../../theme';
 type Props = NativeStackScreenProps<BookingStackParamList, 'ConversationInfo'>;
 
 export function ConversationInfoScreen({ navigation }: Props) {
-  const insets = useSafeAreaInsets();
-
   return (
-    <View style={[styles.screen, { paddingBottom: Math.max(insets.bottom, 16) + 16 }]}>
-      <ScreenHeader
-        onBack={() => navigation.goBack()}
-        progress={0.35}
-        stepLabel="Alignment Conversation"
-      />
+    <ScreenLayout
+      footer={<Button onPress={() => navigation.navigate('ChooseSlot')} title="Continue to Times" />}
+      header={
+        <ScreenHeader
+          onBack={() => navigation.goBack()}
+          progress={0.35}
+          stepLabel="Alignment Conversation"
+        />
+      }
+    >
       <View style={styles.content}>
         <View style={styles.copy}>
           <Text style={styles.headline}>Alignment Conversation</Text>
@@ -54,21 +56,11 @@ export function ConversationInfoScreen({ navigation }: Props) {
           ))}
         </View>
       </View>
-
-      <Button onPress={() => navigation.navigate('ChooseSlot')} title="Continue to Times" />
-    </View>
+    </ScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: colors.background,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.xl,
-    justifyContent: 'space-between',
-  },
   content: {
     gap: spacing.xl,
   },

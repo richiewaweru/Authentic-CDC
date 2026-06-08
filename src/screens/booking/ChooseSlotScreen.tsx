@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ScreenLayout } from '../../components/layout';
 import { Button } from '../../components/ui/Button';
 import { DatePicker } from '../../components/ui/DatePicker';
 import { GuideCard } from '../../components/ui/GuideCard';
@@ -18,7 +18,6 @@ import { colors, radii, spacing, typography } from '../../theme';
 type Props = NativeStackScreenProps<BookingStackParamList, 'ChooseSlot'>;
 
 export function ChooseSlotScreen({ navigation }: Props) {
-  const insets = useSafeAreaInsets();
   const setBookingSelection = useAuthStore((state) => state.setBookingSelection);
   const [guides, setGuides] = useState<Guide[]>([]);
   const [slots, setSlots] = useState<Slot[]>([]);
@@ -83,8 +82,9 @@ export function ChooseSlotScreen({ navigation }: Props) {
 
   if (loading) {
     return (
-      <View style={[styles.screen, { paddingBottom: Math.max(insets.bottom, 16) + 16 }]}>
-        <ScreenHeader progress={0.5} stepLabel="Alignment Conversation" />
+      <ScreenLayout
+        header={<ScreenHeader progress={0.5} stepLabel="Alignment Conversation" />}
+      >
         <View style={styles.content} testID="choose-slot-skeleton">
           <View style={styles.copy}>
             <SkeletonBlock height={24} width="60%" />
@@ -105,17 +105,27 @@ export function ChooseSlotScreen({ navigation }: Props) {
             <SkeletonBlock key={item} borderRadius={radii.input} height={52} />
           ))}
         </View>
-      </View>
+      </ScreenLayout>
     );
   }
 
   return (
-    <View style={[styles.screen, { paddingBottom: Math.max(insets.bottom, 16) + 16 }]}>
-      <ScreenHeader
-        onBack={() => navigation.goBack()}
-        progress={0.5}
-        stepLabel="Alignment Conversation"
-      />
+    <ScreenLayout
+      footer={
+        <Button
+          disabled={!selectedDate || !selectedSlot}
+          onPress={handleContinue}
+          title="Continue"
+        />
+      }
+      header={
+        <ScreenHeader
+          onBack={() => navigation.goBack()}
+          progress={0.5}
+          stepLabel="Alignment Conversation"
+        />
+      }
+    >
       <View style={styles.content}>
         <View style={styles.copy}>
           <Text style={styles.headline}>Choose a Time</Text>
@@ -154,25 +164,11 @@ export function ChooseSlotScreen({ navigation }: Props) {
           </View>
         )}
       </View>
-
-      <Button
-        disabled={!selectedDate || !selectedSlot}
-        onPress={handleContinue}
-        title="Continue"
-      />
-    </View>
+    </ScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: colors.background,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.xl,
-    justifyContent: 'space-between',
-  },
   content: {
     gap: spacing.xl,
   },

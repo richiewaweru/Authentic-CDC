@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
   Alert,
   Image,
-  KeyboardAvoidingView,
   Platform,
   StyleSheet,
   Text,
@@ -12,8 +11,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ScreenLayout } from '../../components/layout';
 import { Button } from '../../components/ui/Button';
 import { ScreenHeader } from '../../components/ui/ScreenHeader';
 import { AuthStackParamList } from '../../navigation/types';
@@ -23,7 +22,6 @@ import { colors, spacing, typography } from '../../theme';
 type Props = NativeStackScreenProps<AuthStackParamList, 'Auth'>;
 
 export function AuthScreen({ navigation, route }: Props) {
-  const insets = useSafeAreaInsets();
   const [loadingMethod, setLoadingMethod] = useState<string | null>(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -97,12 +95,14 @@ export function AuthScreen({ navigation, route }: Props) {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={[styles.screen, { paddingBottom: Math.max(insets.bottom, 16) + 16 }]}
+    <ScreenLayout
+      footer={
+        <Text style={styles.footer}>
+          BY CONTINUING, YOU AGREE TO OUR TERMS OF SERVICE & PRIVACY POLICY
+        </Text>
+      }
+      header={<ScreenHeader onBack={() => navigation.goBack()} stepLabel="Account Setup" />}
     >
-      <ScreenHeader onBack={() => navigation.goBack()} stepLabel="Account Setup" />
-
       <View style={styles.content}>
         <View style={styles.logoWrap}>
           <Image
@@ -192,21 +192,11 @@ export function AuthScreen({ navigation, route }: Props) {
           </Text>
         </TouchableOpacity>
       </View>
-
-      <Text style={styles.footer}>BY CONTINUING, YOU AGREE TO OUR TERMS OF SERVICE & PRIVACY POLICY</Text>
-    </KeyboardAvoidingView>
+    </ScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: colors.background,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.xl,
-    justifyContent: 'space-between',
-  },
   content: {
     gap: spacing.xl,
   },

@@ -13,6 +13,21 @@ jest.mock('react-native-safe-area-context', () => {
   };
 });
 
+jest.mock('expo-linear-gradient', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+
+  return {
+    LinearGradient: ({
+      children,
+      style,
+    }: {
+      children?: React.ReactNode;
+      style?: unknown;
+    }) => <View style={style}>{children}</View>,
+  };
+});
+
 jest.mock('../src/hooks/useOnboardingPersistence', () => ({
   useOnboardingPersistence: () => mockedPersistence,
 }));
