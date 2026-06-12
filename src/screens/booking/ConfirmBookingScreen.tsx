@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Alert, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { ScreenLayout } from '../../components/layout';
@@ -8,11 +8,12 @@ import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { ScreenHeader } from '../../components/ui/ScreenHeader';
 import { CONFIRMATION_FEE } from '../../constants/fees';
-import { confirmMockPayment } from '../../mocks/payment';
 import { BookingStackParamList } from '../../navigation/types';
 import { bookSlot } from '../../services/slotService';
 import { useAuthStore } from '../../stores/authStore';
 import { colors, spacing, typography } from '../../theme';
+import { showErrorDialog, showInfoDialog } from '../../utils/dialogs';
+import { addMinutesToTime } from '../../utils/date';
 
 type Props = NativeStackScreenProps<BookingStackParamList, 'ConfirmBooking'>;
 
@@ -23,7 +24,7 @@ export function ConfirmBookingScreen({ navigation }: Props) {
 
   const handlePay = async () => {
     if (!selection) {
-      Alert.alert(
+      showInfoDialog(
         'No time selected',
         'Choose an Alignment Conversation time before confirming your place.',
       );
@@ -34,14 +35,22 @@ export function ConfirmBookingScreen({ navigation }: Props) {
     setLoading(true);
 
     try {
-      // TODO: Replace the mock confirmation call with the real payment provider flow.
-      const booking = await confirmMockPayment(selection);
       await bookSlot(selection.slot.id);
-      confirmBooking(booking);
+
+      confirmBooking({
+        ...selection,
+        slotId: selection.slot.id,
+        endTime: addMinutesToTime(selection.slot.time, selection.slot.durationMinutes),
+        status: 'confirmed',
+      });
+
       navigation.navigate('BookingConfirmed');
     } catch (error) {
-      console.error('Confirmation Fee processing failed:', error);
-      Alert.alert('Confirmation Fee could not be processed', 'Please try again.');
+      console.error('Booking confirmation failed:', error);
+      showErrorDialog(
+        'Could not confirm your booking',
+        error instanceof Error ? error.message : 'Please try again.',
+      );
     } finally {
       setLoading(false);
     }
@@ -68,7 +77,7 @@ export function ConfirmBookingScreen({ navigation }: Props) {
             title="Change Time"
             variant="outlined"
           />
-          <Button loading={loading} onPress={() => void handlePay()} title="Pay Confirmation Fee" />
+          <Button loading={loading} onPress={() => void handlePay()} title="Confirm Booking" />
         </>
       }
       header={
@@ -97,7 +106,7 @@ export function ConfirmBookingScreen({ navigation }: Props) {
             <Text style={styles.totalLabel}>Total Due</Text>
             <Text style={styles.totalLabel}>{CONFIRMATION_FEE.label}</Text>
           </View>
-          <Text style={styles.footer}>Secure checkout powered by Stripe</Text>
+          <Text style={styles.footer}>Payment collection is still pending and will be connected later.</Text>
         </Card>
       </View>
     </ScreenLayout>

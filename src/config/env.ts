@@ -1,4 +1,5 @@
 const APP_SCHEME_FALLBACK = 'authenticcdc';
+const SLOT_DATA_SOURCE_VALUES = ['mock', 'supabase'] as const;
 
 function getRequiredSupabaseUrl() {
   const value = process.env.EXPO_PUBLIC_SUPABASE_URL;
@@ -39,4 +40,16 @@ export function getSupabasePublicConfig() {
     url: getRequiredSupabaseUrl(),
     publishableKey: getRequiredSupabasePublishableKey(),
   };
+}
+
+export function getSlotDataSource() {
+  const value = process.env.EXPO_PUBLIC_SLOT_DATA_SOURCE ?? 'supabase';
+
+  if (SLOT_DATA_SOURCE_VALUES.includes(value as (typeof SLOT_DATA_SOURCE_VALUES)[number])) {
+    return value as 'mock' | 'supabase';
+  }
+
+  throw new Error(
+    'Invalid EXPO_PUBLIC_SLOT_DATA_SOURCE value. Expected "mock" or "supabase".',
+  );
 }

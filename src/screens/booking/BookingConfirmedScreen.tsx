@@ -1,5 +1,5 @@
 import React from 'react';
-import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -10,6 +10,7 @@ import { ScreenHeader } from '../../components/ui/ScreenHeader';
 import { BookingStackParamList } from '../../navigation/types';
 import { useAuthStore } from '../../stores/authStore';
 import { colors, spacing, typography } from '../../theme';
+import { showInfoDialog } from '../../utils/dialogs';
 
 type Props = NativeStackScreenProps<BookingStackParamList, 'BookingConfirmed'>;
 
@@ -32,7 +33,7 @@ export function BookingConfirmedScreen({ navigation }: Props) {
       footer={
         <>
           <Button
-            onPress={() => Alert.alert('Calendar support', 'Calendar export will be connected later.')}
+            onPress={() => showInfoDialog('Calendar support', 'Calendar export will be connected later.')}
             title="Add to Calendar"
             variant="outlined"
           />
@@ -41,7 +42,7 @@ export function BookingConfirmedScreen({ navigation }: Props) {
             accessibilityRole="button"
             activeOpacity={0.8}
             onPress={() =>
-              Alert.alert('Google Calendar sync', 'Google Calendar sync will be available soon.')
+              showInfoDialog('Google Calendar sync', 'Google Calendar sync will be available soon.')
             }
           >
             <Text style={styles.link}>Or connect Google Calendar to sync automatically</Text>

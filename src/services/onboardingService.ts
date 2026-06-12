@@ -55,6 +55,8 @@ function mapRequiredValue(
   mapping: Record<string, string>,
   fieldName: string,
 ) {
+  console.log(`[Onboarding] Mapping ${fieldName}:`, JSON.stringify(value));
+
   if (!value) {
     return null;
   }
@@ -152,10 +154,21 @@ export const onboardingService = {
     const responsesPayload = mapOnboardingDataToResponsesPayload(userId, data);
     const preferencesPayload = mapOnboardingDataToPreferencesPayload(userId, data);
 
-    const [{ error: responsesError }, { error: preferencesError }] = await Promise.all([
+    const [
+      { data: responsesData, error: responsesError },
+      { data: preferencesData, error: preferencesError },
+    ] = await Promise.all([
       supabase.from('onboarding_responses').upsert(responsesPayload, { onConflict: 'user_id' }),
       supabase.from('preferences').upsert(preferencesPayload, { onConflict: 'user_id' }),
     ]);
+
+    console.log('[Onboarding] Responses payload:', JSON.stringify(responsesPayload, null, 2));
+    console.log('[Onboarding] Responses result:', { data: responsesData, error: responsesError });
+    console.log('[Onboarding] Preferences payload:', JSON.stringify(preferencesPayload, null, 2));
+    console.log('[Onboarding] Preferences result:', {
+      data: preferencesData,
+      error: preferencesError,
+    });
 
     if (responsesError) {
       console.error('Unable to save onboarding responses:', responsesError);
@@ -176,6 +189,8 @@ export const onboardingService = {
       .eq('id', userId)
       .select('onboarding_complete, user_state')
       .single();
+
+    console.log('[Onboarding] Profile update result:', { data: profileData, error: profileError });
 
     if (isMissingProfileError(profileError)) {
       console.error('Missing profile row while finalizing onboarding:', profileError);

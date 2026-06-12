@@ -137,6 +137,7 @@ describe('booking copy updates', () => {
     expect(alertSpy).toHaveBeenCalledWith(
       'Alignment Profile',
       'Your full Alignment Profile will be available to review and edit in your Profile tab once Community Access is granted.',
+      undefined,
     );
 
     fireEvent.press(getByLabelText('Sign out'));

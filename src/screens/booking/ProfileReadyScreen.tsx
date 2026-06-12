@@ -1,5 +1,5 @@
 import React from 'react';
-import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
@@ -10,28 +10,31 @@ import { ScreenHeader } from '../../components/ui/ScreenHeader';
 import { BookingStackParamList } from '../../navigation/types';
 import { useAuthStore } from '../../stores/authStore';
 import { colors, spacing, typography } from '../../theme';
+import { confirmDialog, showErrorDialog, showInfoDialog } from '../../utils/dialogs';
 
 type Props = NativeStackScreenProps<BookingStackParamList, 'ProfileReady'>;
 
 export function ProfileReadyScreen({ navigation }: Props) {
   const signOut = useAuthStore((state) => state.signOut);
 
-  const handleSignOut = () => {
-    Alert.alert('Sign out', 'Are you sure you want to sign out of Authentic?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Sign Out',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await signOut();
-          } catch (error) {
-            console.error('Sign out failed:', error);
-            Alert.alert('Could not sign out', 'Please try again.');
-          }
-        },
-      },
-    ]);
+  const handleSignOut = async () => {
+    const confirmed = await confirmDialog({
+      title: 'Sign out',
+      message: 'Are you sure you want to sign out of Authentic?',
+      confirmText: 'Sign Out',
+      cancelText: 'Cancel',
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Sign out failed:', error);
+      showErrorDialog('Could not sign out', 'Please try again.');
+    }
   };
 
   return (
@@ -44,7 +47,7 @@ export function ProfileReadyScreen({ navigation }: Props) {
           />
           <TouchableOpacity
             onPress={() => {
-              Alert.alert(
+              showInfoDialog(
                 'Alignment Profile',
                 'Your full Alignment Profile will be available to review and edit in your Profile tab once Community Access is granted.',
               );
@@ -55,7 +58,7 @@ export function ProfileReadyScreen({ navigation }: Props) {
           <TouchableOpacity
             accessibilityLabel="Sign out"
             accessibilityRole="button"
-            onPress={handleSignOut}
+            onPress={() => void handleSignOut()}
             style={styles.signOutButton}
           >
             <Text style={styles.signOutText}>Sign Out</Text>

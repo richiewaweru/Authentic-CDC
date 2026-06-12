@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Animated,
   BackHandler,
   ScrollView,
@@ -21,6 +20,7 @@ import { onboardingService } from '../../services/onboardingService';
 import { useAuthStore } from '../../stores/authStore';
 import { OnboardingData } from '../../types/onboarding';
 import { colors, spacing, typography } from '../../theme';
+import { showErrorDialog } from '../../utils/dialogs';
 import { CommunicationStep } from './CommunicationStep';
 import { FaithStep } from './FaithStep';
 import { FutureVisionStep } from './FutureVisionStep';
@@ -157,6 +157,12 @@ export function OnboardingFlow({ navigation }: Props) {
     const result = onboardingSchema.safeParse(state.data);
 
     if (!result.success) {
+      console.error(
+        '[Onboarding] Zod validation failed:',
+        JSON.stringify(result.error.issues, null, 2),
+      );
+      console.error('[Onboarding] Current state.data:', JSON.stringify(state.data, null, 2));
+
       const issue = result.error.issues[0];
       const path = String(issue.path[0] ?? 'ageRange');
       const step = getValidationStep(path);
@@ -186,7 +192,7 @@ export function OnboardingFlow({ navigation }: Props) {
         await completeFlow();
       } catch (error) {
         console.error('Unable to complete Alignment Profile:', error);
-        Alert.alert(
+        showErrorDialog(
           'Could not complete your Alignment Profile',
           'Please try again in a moment.',
         );

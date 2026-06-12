@@ -7,11 +7,12 @@ import { Card } from './Card';
 
 interface GuideCardProps {
   guide: Guide;
+  selected?: boolean;
 }
 
-export function GuideCard({ guide }: GuideCardProps) {
+export function GuideCard({ guide, selected = false }: GuideCardProps) {
   return (
-    <Card style={styles.card}>
+    <Card style={[styles.card, selected && styles.selectedCard]}>
       {guide.avatarUrl ? (
         <Image
           accessibilityLabel={`${guide.name} photo`}
@@ -38,6 +39,11 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     padding: spacing.lg,
     backgroundColor: colors.surfaceLow,
+  },
+  selectedCard: {
+    borderWidth: 2,
+    borderColor: colors.primary,
+    backgroundColor: colors.surface,
   },
   avatar: {
     width: 56,

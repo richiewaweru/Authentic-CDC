@@ -1,5 +1,5 @@
 import React from 'react';
-import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -12,6 +12,7 @@ import { BookingStackParamList } from '../../navigation/types';
 import { useAuthStore } from '../../stores/authStore';
 import { colors, spacing, typography } from '../../theme';
 import { formatDateLabel } from '../../utils/date';
+import { confirmDialog, showErrorDialog } from '../../utils/dialogs';
 
 type Props = NativeStackScreenProps<BookingStackParamList, 'PendingHome'>;
 
@@ -30,53 +31,53 @@ export function PendingHomeScreen({ navigation }: Props) {
   const signOut = useAuthStore((state) => state.signOut);
   const [rescheduling, setRescheduling] = React.useState(false);
 
-  const handleReschedule = () => {
-    Alert.alert(
-      'Change time',
-      'Your current time will be released and you can choose a new Alignment Conversation time.',
-      [
-        { text: 'Keep current time', style: 'cancel' },
-        {
-          text: 'Change Time',
-          style: 'destructive',
-          onPress: () => {
-            void (async () => {
-              setRescheduling(true);
-              try {
-                await rescheduleBooking();
-                navigation.navigate('ChooseSlot');
-              } catch (error) {
-                console.error('Unable to reschedule Alignment Conversation:', error);
-                Alert.alert(
-                  'Could not change time',
-                  'We could not release your current time. Please try again.',
-                );
-              } finally {
-                setRescheduling(false);
-              }
-            })();
-          },
-        },
-      ],
-    );
+  const handleReschedule = async () => {
+    const confirmed = await confirmDialog({
+      title: 'Change time',
+      message:
+        'Your current time will be released and you can choose a new Alignment Conversation time.',
+      confirmText: 'Change Time',
+      cancelText: 'Keep current time',
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
+    setRescheduling(true);
+
+    try {
+      await rescheduleBooking();
+      navigation.navigate('ChooseSlot');
+    } catch (error) {
+      console.error('Unable to reschedule Alignment Conversation:', error);
+      showErrorDialog(
+        'Could not change time',
+        'We could not release your current time. Please try again.',
+      );
+    } finally {
+      setRescheduling(false);
+    }
   };
 
-  const handleSignOut = () => {
-    Alert.alert('Sign out', 'Are you sure you want to sign out of Authentic?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Sign Out',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await signOut();
-          } catch (error) {
-            console.error('Sign out failed:', error);
-            Alert.alert('Could not sign out', 'Please try again.');
-          }
-        },
-      },
-    ]);
+  const handleSignOut = async () => {
+    const confirmed = await confirmDialog({
+      title: 'Sign out',
+      message: 'Are you sure you want to sign out of Authentic?',
+      confirmText: 'Sign Out',
+      cancelText: 'Cancel',
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Sign out failed:', error);
+      showErrorDialog('Could not sign out', 'Please try again.');
+    }
   };
 
   if (!booking) {
@@ -88,7 +89,7 @@ export function PendingHomeScreen({ navigation }: Props) {
             <TouchableOpacity
               accessibilityLabel="Sign out"
               accessibilityRole="button"
-              onPress={handleSignOut}
+              onPress={() => void handleSignOut()}
               style={styles.signOutButton}
             >
               <Text style={styles.signOutText}>Sign Out</Text>
@@ -111,7 +112,7 @@ export function PendingHomeScreen({ navigation }: Props) {
         <TouchableOpacity
           accessibilityLabel="Sign out"
           accessibilityRole="button"
-          onPress={handleSignOut}
+          onPress={() => void handleSignOut()}
           style={styles.signOutButton}
         >
           <Text style={styles.signOutText}>Sign Out</Text>
@@ -137,7 +138,7 @@ export function PendingHomeScreen({ navigation }: Props) {
             <Button onPress={() => navigation.navigate('BookingConfirmed')} title="View Details" />
             <Button
               loading={rescheduling}
-              onPress={handleReschedule}
+              onPress={() => void handleReschedule()}
               title="Change Time"
               variant="outlined"
             />

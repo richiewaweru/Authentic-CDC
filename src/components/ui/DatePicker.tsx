@@ -40,10 +40,13 @@ const styles = StyleSheet.create({
     paddingRight: spacing.lg,
   },
   chip: {
+    minHeight: 48,
     borderRadius: radii.pill,
     backgroundColor: colors.sand,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   selectedChip: {
     backgroundColor: colors.primary,

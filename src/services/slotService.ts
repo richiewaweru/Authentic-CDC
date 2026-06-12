@@ -1,8 +1,10 @@
 import { mockGuides } from '../mocks/guides';
 import { mockSlots } from '../mocks/slots';
+import { getSlotDataSource } from '../config/env';
+import { supabase } from '../config/supabase';
 import { Guide, Slot } from '../types/booking';
 
-const DATA_SOURCE: 'mock' | 'supabase' = 'mock';
+const DATA_SOURCE = getSlotDataSource();
 
 export async function fetchGuides(): Promise<Guide[]> {
   if (DATA_SOURCE === 'supabase') {
@@ -43,28 +45,165 @@ async function fetchSlotsFromMock(guideId: string): Promise<Slot[]> {
 }
 
 async function fetchGuidesFromSupabase(): Promise<Guide[]> {
-  // TODO: import the Supabase client and map guide_profiles rows into Guide objects.
-  throw new Error('Supabase not wired yet - keep DATA_SOURCE set to "mock".');
+  const { data, error } = await supabase
+    .from('guide_profiles')
+    .select('id, display_name, name, title, initials, avatar_url')
+    .eq('is_active', true)
+    .order('display_name', { ascending: true });
+
+  if (error) {
+    console.error('Failed to fetch guides:', error);
+    throw new Error('Could not load available guides.');
+  }
+
+  return (data ?? []).map((row) => {
+    const name = row.display_name || row.name || 'Guide';
+
+    return {
+      id: row.id,
+      name,
+      title: row.title || 'Community Guide',
+      initials: row.initials || buildInitials(name),
+      avatarUrl: row.avatar_url ?? null,
+    };
+  });
 }
 
 async function fetchSlotsFromSupabase(guideId: string): Promise<Slot[]> {
-  // TODO: import the Supabase client and map available_slots rows into Slot objects.
-  void guideId;
-  throw new Error('Supabase not wired yet - keep DATA_SOURCE set to "mock".');
+  const today = new Date().toISOString().split('T')[0];
+  const { data, error } = await supabase
+    .from('available_slots')
+    .select('id, guide_id, slot_date, slot_time, duration_minutes')
+    .eq('guide_id', guideId)
+    .eq('status', 'open')
+    .gte('slot_date', today)
+    .order('slot_date', { ascending: true })
+    .order('slot_time', { ascending: true });
+
+  if (error) {
+    console.error('Failed to fetch slots:', error);
+    throw new Error('Could not load available times.');
+  }
+
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    guideId: row.guide_id,
+    date: row.slot_date ?? '',
+    time: formatSlotTime(row.slot_time ?? '00:00:00'),
+    durationMinutes: row.duration_minutes ?? 30,
+  }));
 }
 
 async function bookSlotInSupabase(slotId: string): Promise<void> {
-  // TODO: mark the selected available_slots row as booked.
-  void slotId;
-  throw new Error('Supabase not wired yet - keep DATA_SOURCE set to "mock".');
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error('You must be signed in to book a time.');
+  }
+
+  const { data: slot, error: slotError } = await supabase
+    .from('available_slots')
+    .select('id, guide_id, slot_date, slot_time, duration_minutes, status')
+    .eq('id', slotId)
+    .single();
+
+  if (slotError || !slot) {
+    console.error('Failed to load slot before booking:', slotError);
+    throw new Error('That time slot could not be found.');
+  }
+
+  if (slot.status !== 'open') {
+    throw new Error('That time is no longer available. Please choose another.');
+  }
+
+  const { data: existingBooking, error: existingBookingError } = await supabase
+    .from('bookings')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('slot_id', slotId)
+    .eq('status', 'confirmed')
+    .limit(1)
+    .maybeSingle();
+
+  if (existingBookingError) {
+    console.error('Failed to check for an existing booking:', existingBookingError);
+    throw new Error('Could not confirm whether this time is still available.');
+  }
+
+  if (existingBooking) {
+    throw new Error('You already booked this time.');
+  }
+
+  const { error: bookingError } = await supabase.from('bookings').insert({
+    user_id: user.id,
+    guide_id: slot.guide_id,
+    slot_id: slotId,
+    slot_date: slot.slot_date,
+    slot_time: slot.slot_time,
+    duration_minutes: slot.duration_minutes ?? 30,
+    status: 'confirmed',
+    payment_status: 'pending',
+    amount_paid: 0,
+    currency: 'usd',
+  });
+
+  if (bookingError) {
+    console.error('Failed to create booking:', bookingError);
+    throw new Error('Could not complete your booking. Please try again.');
+  }
 }
 
 async function releaseSlotInSupabase(slotId: string): Promise<void> {
-  // TODO: mark the selected available_slots row as unbooked.
-  void slotId;
-  throw new Error('Supabase not wired yet - keep DATA_SOURCE set to "mock".');
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error('You must be signed in to change your booking.');
+  }
+
+  const { data: cancelledBookings, error: bookingError } = await supabase
+    .from('bookings')
+    .update({
+      status: 'cancelled',
+      cancelled_at: new Date().toISOString(),
+      cancel_reason: 'Member rescheduled',
+    })
+    .eq('slot_id', slotId)
+    .eq('user_id', user.id)
+    .eq('status', 'confirmed')
+    .select('id');
+
+  if (bookingError) {
+    console.error('Failed to cancel booking:', bookingError);
+    throw new Error('Could not release that time.');
+  }
+
+  if (!cancelledBookings) {
+    throw new Error('Your current booking could not be released.');
+  }
 }
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function formatSlotTime(timeStr: string) {
+  const [hoursText = '0', minutesText = '00'] = timeStr.split(':');
+  const hours = Number(hoursText);
+  const minutes = Number(minutesText);
+  const period = hours >= 12 ? 'PM' : 'AM';
+  const displayHour = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
+
+  return `${displayHour}:${minutes.toString().padStart(2, '0')} ${period}`;
+}
+
+function buildInitials(name: string) {
+  return name
+    .split(/[\s._-]+/)
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join('');
 }

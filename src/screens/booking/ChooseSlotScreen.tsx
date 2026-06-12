@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { ScreenLayout } from '../../components/layout';
@@ -20,10 +20,12 @@ type Props = NativeStackScreenProps<BookingStackParamList, 'ChooseSlot'>;
 export function ChooseSlotScreen({ navigation }: Props) {
   const setBookingSelection = useAuthStore((state) => state.setBookingSelection);
   const [guides, setGuides] = useState<Guide[]>([]);
-  const [slots, setSlots] = useState<Slot[]>([]);
+  const [slotsByGuide, setSlotsByGuide] = useState<Record<string, Slot[]>>({});
+  const [selectedGuideId, setSelectedGuideId] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -31,15 +33,36 @@ export function ChooseSlotScreen({ navigation }: Props) {
     const load = async () => {
       try {
         const guideResults = await fetchGuides();
-        const firstGuide = guideResults[0];
-        const slotResults = firstGuide ? await fetchAvailableSlots(firstGuide.id) : [];
+        const slotResults = await Promise.all(
+          guideResults.map(async (guide) => [guide.id, await fetchAvailableSlots(guide.id)] as const),
+        );
+
+        const nextSlotsByGuide = Object.fromEntries(slotResults);
+        const guidesWithSlots = guideResults.filter((guide) => (nextSlotsByGuide[guide.id] ?? []).length > 0);
+        const fallbackGuides = guidesWithSlots.length ? guidesWithSlots : guideResults;
+        const firstGuideId = fallbackGuides[0]?.id ?? null;
 
         if (!mounted) {
           return;
         }
 
-        setGuides(guideResults);
-        setSlots(slotResults);
+        setGuides(fallbackGuides);
+        setSlotsByGuide(nextSlotsByGuide);
+        setSelectedGuideId(firstGuideId);
+        setLoadError(null);
+      } catch (error) {
+        console.error('Unable to load guides and slots:', error);
+
+        if (!mounted) {
+          return;
+        }
+
+        setGuides([]);
+        setSlotsByGuide({});
+        setSelectedGuideId(null);
+        setLoadError(
+          error instanceof Error ? error.message : 'Could not load available times right now.',
+        );
       } finally {
         if (mounted) {
           setLoading(false);
@@ -54,11 +77,17 @@ export function ChooseSlotScreen({ navigation }: Props) {
     };
   }, []);
 
-  const selectedGuide = guides[0] ?? null;
-  const guideSlots = useMemo(
-    () => slots.filter((slot) => slot.guideId === selectedGuide?.id),
-    [selectedGuide, slots],
+  const selectedGuide = useMemo(
+    () => guides.find((guide) => guide.id === selectedGuideId) ?? guides[0] ?? null,
+    [guides, selectedGuideId],
   );
+  const guideSlots = useMemo(() => {
+    if (!selectedGuide) {
+      return [];
+    }
+
+    return slotsByGuide[selectedGuide.id] ?? [];
+  }, [selectedGuide, slotsByGuide]);
   const availableDates = useMemo(
     () => Array.from(new Set(guideSlots.map((slot) => slot.date))).slice(0, 5),
     [guideSlots],
@@ -73,9 +102,9 @@ export function ChooseSlotScreen({ navigation }: Props) {
       return;
     }
 
-    setBookingSelection({
-      guide: selectedGuide,
-      slot: selectedSlot,
+        setBookingSelection({
+          guide: selectedGuide,
+          slot: selectedSlot,
     });
     navigation.navigate('ConfirmBooking');
   };
@@ -134,9 +163,47 @@ export function ChooseSlotScreen({ navigation }: Props) {
           </Text>
         </View>
 
-        {selectedGuide ? <GuideCard guide={selectedGuide} /> : null}
+        {guides.length > 1 ? (
+          <View style={styles.guidePickerSection}>
+            <Text style={styles.label}>SELECT A GUIDE</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.guidePicker}
+            >
+              {guides.map((guide) => {
+                const selected = guide.id === selectedGuide?.id;
 
-        {availableDates.length ? (
+                return (
+                  <TouchableOpacity
+                    key={guide.id}
+                    activeOpacity={0.9}
+                    accessibilityLabel={`Choose ${guide.name}`}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected }}
+                    onPress={() => {
+                      setSelectedGuideId(guide.id);
+                      setSelectedDate(null);
+                      setSelectedSlot(null);
+                    }}
+                    style={styles.guidePickerButton}
+                  >
+                    <GuideCard guide={guide} selected={selected} />
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
+        ) : selectedGuide ? (
+          <GuideCard guide={selectedGuide} />
+        ) : null}
+
+        {loadError ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyTitle}>We couldn&apos;t load times right now.</Text>
+            <Text style={styles.emptyText}>{loadError}</Text>
+          </View>
+        ) : availableDates.length ? (
           <>
             <DatePicker
               dates={availableDates}
@@ -155,6 +222,13 @@ export function ChooseSlotScreen({ navigation }: Props) {
               />
             </View>
           </>
+        ) : selectedGuide ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyTitle}>No times available for this guide right now.</Text>
+            <Text style={styles.emptyText}>
+              Choose another guide or check back soon for new Alignment Conversation times.
+            </Text>
+          </View>
         ) : (
           <View style={styles.emptyState}>
             <Text style={styles.emptyTitle}>No times available right now.</Text>
@@ -185,6 +259,16 @@ const styles = StyleSheet.create({
   },
   times: {
     gap: spacing.sm,
+  },
+  guidePickerSection: {
+    gap: spacing.sm,
+  },
+  guidePicker: {
+    gap: spacing.md,
+    paddingRight: spacing.lg,
+  },
+  guidePickerButton: {
+    width: 280,
   },
   label: {
     ...typography.labelMd,
