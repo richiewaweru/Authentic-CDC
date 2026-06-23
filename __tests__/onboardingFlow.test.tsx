@@ -32,6 +32,22 @@ jest.mock('../src/hooks/useOnboardingPersistence', () => ({
   useOnboardingPersistence: () => mockedPersistence,
 }));
 
+jest.mock('@react-native-community/datetimepicker', () => {
+  const React = require('react');
+  const { TouchableOpacity, Text } = require('react-native');
+
+  return function MockDateTimePicker(props: { onChange: (_event: unknown, date?: Date) => void }) {
+    return (
+      <TouchableOpacity
+        accessibilityLabel="Mock date picker"
+        onPress={() => props.onChange({}, new Date('1990-01-01T00:00:00.000Z'))}
+      >
+        <Text>Mock date picker</Text>
+      </TouchableOpacity>
+    );
+  };
+});
+
 jest.mock('../src/services/onboardingService', () => ({
   onboardingService: {
     saveCompletedOnboarding: jest.fn(),
@@ -55,23 +71,49 @@ import { OnboardingFlow } from '../src/screens/onboarding/OnboardingFlow';
 
 describe('OnboardingFlow', () => {
   let consoleErrorSpy: jest.SpyInstance;
+  const mockSaveCompletedOnboarding = jest.requireMock('../src/services/onboardingService')
+    .onboardingService.saveCompletedOnboarding as jest.Mock;
 
   beforeEach(() => {
     consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    mockSaveCompletedOnboarding.mockReset();
+    mockSaveCompletedOnboarding.mockResolvedValue({
+      onboardingComplete: true,
+      userState: 'onboarding_complete',
+    });
   });
 
   afterEach(() => {
     consoleErrorSpy.mockRestore();
   });
 
-  it('routes future hopes validation back to Future Vision with inline messaging', async () => {
-    const { findByText, getByText, getAllByText } = render(
+  it('starts on the personal profile step and blocks continue until required fields are present', async () => {
+    const { findByText, getByText, queryByText } = render(
       <OnboardingFlow navigation={{ goBack: jest.fn(), navigate: jest.fn() } as never} route={{} as never} />,
     );
 
-    await findByText('Build your Alignment Profile');
+    await findByText("Let's get to know you");
 
-    fireEvent.press(getByText('Start Alignment Profile'));
+    fireEvent.press(getByText('Continue'));
+
+    await waitFor(() => {
+      expect(getByText('Please enter your first name.')).toBeTruthy();
+    });
+    expect(queryByText('Relationship Intentions')).toBeNull();
+  }, 10000);
+
+  it('routes future hopes validation back to Future Vision with inline messaging', async () => {
+    const { findByText, getByText, getByLabelText, getAllByText } = render(
+      <OnboardingFlow navigation={{ goBack: jest.fn(), navigate: jest.fn() } as never} route={{} as never} />,
+    );
+
+    await findByText("Let's get to know you");
+
+    fireEvent.changeText(getByLabelText('First name'), 'Ada');
+    fireEvent.press(getByText('Woman'));
+    fireEvent.press(getByLabelText('Date of birth'));
+    fireEvent.press(getByText('Mock date picker'));
+    fireEvent.press(getByText('Continue'));
     fireEvent.press(getByText('Intentional dating'));
     fireEvent.press(getByText('Continue'));
 
@@ -87,7 +129,6 @@ describe('OnboardingFlow', () => {
     fireEvent.press(getByText('Continue'));
 
     fireEvent.press(getByText('Continue'));
-    fireEvent.press(getByText('Complete Alignment Profile'));
 
     await waitFor(() => {
       expect(getByText('Share a short note about what you hope for.')).toBeTruthy();

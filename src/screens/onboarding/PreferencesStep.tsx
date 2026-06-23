@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { DealbreakRow } from '../../components/ui/DealbreakRow';
 import { MultiSelectPill } from '../../components/ui/MultiSelectPill';
@@ -26,6 +26,13 @@ export function PreferencesStep({
   updateData,
   validationMessage,
 }: PreferencesStepProps) {
+  const distanceHint =
+    data.distanceType === 'radius'
+      ? `Showing members within ${data.distanceRadiusMiles} miles of your location`
+      : data.distanceType === 'state'
+        ? 'Showing members in your state'
+        : 'Open to connecting with anyone in the community';
+
   const toggleDenomination = (value: string) => {
     const nextValues = data.denominations.includes(value)
       ? data.denominations.filter((item) => item !== value)
@@ -50,14 +57,47 @@ export function PreferencesStep({
           onChange={(value) => updateData({ ageRange: value })}
           value={data.ageRange}
         />
-        <RangeSlider
-          label="Distance"
-          max={200}
-          min={5}
-          onChange={(value) => updateData({ distanceRange: value })}
-          unit="mi"
-          value={data.distanceRange}
-        />
+        <View style={styles.group}>
+          <Text style={styles.label}>DISTANCE PREFERENCE</Text>
+          <View style={styles.chipRow}>
+            {(['radius', 'state', 'open'] as const).map((type) => (
+              <TouchableOpacity
+                key={type}
+                accessibilityRole="button"
+                accessibilityState={{ selected: data.distanceType === type }}
+                onPress={() => updateData({ distanceType: type })}
+                style={[styles.chip, data.distanceType === type && styles.chipActive]}
+              >
+                <Text style={[styles.chipText, data.distanceType === type && styles.chipTextActive]}>
+                  {type === 'radius' ? 'Nearby' : type === 'state' ? 'My State' : 'No Preference'}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          {data.distanceType === 'radius' ? (
+            <View style={styles.chipRow}>
+              {([10, 25, 50, 100] as const).map((miles) => (
+                <TouchableOpacity
+                  key={miles}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: data.distanceRadiusMiles === miles }}
+                  onPress={() => updateData({ distanceRadiusMiles: miles })}
+                  style={[styles.chip, data.distanceRadiusMiles === miles && styles.chipActive]}
+                >
+                  <Text
+                    style={[
+                      styles.chipText,
+                      data.distanceRadiusMiles === miles && styles.chipTextActive,
+                    ]}
+                  >
+                    {miles} mi
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          ) : null}
+          <Text style={styles.hint}>{distanceHint}</Text>
+        </View>
         <View style={styles.group}>
           <Text style={styles.label}>DENOMINATIONS</Text>
           <MultiSelectPill
@@ -157,6 +197,35 @@ const styles = StyleSheet.create({
   },
   group: {
     gap: spacing.sm,
+  },
+  chipRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  chip: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: 100,
+    borderWidth: 1.5,
+    borderColor: colors.outlineVariant,
+    backgroundColor: colors.surface,
+  },
+  chipActive: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryContainer,
+  },
+  chipText: {
+    ...typography.labelMd,
+    color: colors.onSurfaceVariant,
+  },
+  chipTextActive: {
+    color: colors.primary,
+  },
+  hint: {
+    ...typography.bodySm,
+    color: colors.onSurfaceVariant,
+    fontStyle: 'italic',
   },
   label: {
     ...typography.labelMd,

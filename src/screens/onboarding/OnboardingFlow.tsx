@@ -14,7 +14,7 @@ import { ScreenLayout } from '../../components/layout';
 import { Button } from '../../components/ui/Button';
 import { ScreenHeader } from '../../components/ui/ScreenHeader';
 import { useOnboardingPersistence } from '../../hooks/useOnboardingPersistence';
-import { onboardingSchema } from '../../lib/validation';
+import { onboardingSchema, onboardingStepSchemas } from '../../lib/validation';
 import { OnboardingStackParamList } from '../../navigation/types';
 import { onboardingService } from '../../services/onboardingService';
 import { useAuthStore } from '../../stores/authStore';
@@ -25,7 +25,7 @@ import { CommunicationStep } from './CommunicationStep';
 import { FaithStep } from './FaithStep';
 import { FutureVisionStep } from './FutureVisionStep';
 import { LifestyleStep } from './LifestyleStep';
-import { OverviewStep } from './OverviewStep';
+import { PersonalProfileStep } from './PersonalProfileStep';
 import { PreferencesStep } from './PreferencesStep';
 import { RelationshipStep } from './RelationshipStep';
 import { initialOnboardingState, onboardingReducer } from './state';
@@ -34,10 +34,10 @@ type Props = NativeStackScreenProps<OnboardingStackParamList, 'Onboarding'>;
 
 const stepMeta = [
   {
-    eyebrow: 'Alignment Profile',
-    label: 'Overview',
+    eyebrow: 'Your Profile',
+    label: 'About You',
     progress: 1 / 7,
-    cta: 'Start Alignment Profile',
+    cta: 'Continue',
   },
   { eyebrow: 'Alignment Profile', label: 'Relationship', progress: 2 / 7, cta: 'Continue' },
   { eyebrow: 'Alignment Profile', label: 'Communication', progress: 3 / 7, cta: 'Continue' },
@@ -140,6 +140,9 @@ export function OnboardingFlow({ navigation }: Props) {
   };
 
   const validationStepMap: Record<string, number> = {
+    firstName: 0,
+    dateOfBirth: 0,
+    gender: 0,
     relationshipGoal: 1,
     communicationStyle: 2,
     conflictStyle: 2,
@@ -149,9 +152,23 @@ export function OnboardingFlow({ navigation }: Props) {
     futureHopes: 5,
     ageRange: 6,
     distanceRange: 6,
+    distanceType: 6,
+    distanceRadiusMiles: 6,
   };
 
   const getValidationStep = (path: string) => validationStepMap[path] ?? 6;
+
+  const validateCurrentStep = () => {
+    const result = onboardingStepSchemas[state.step].safeParse(state.data);
+
+    if (result.success) {
+      return true;
+    }
+
+    const issue = result.error.issues[0];
+    dispatch({ type: 'SET_VALIDATION', message: issue.message, step: state.step });
+    return false;
+  };
 
   const completeFlow = async () => {
     const result = onboardingSchema.safeParse(state.data);
@@ -187,6 +204,10 @@ export function OnboardingFlow({ navigation }: Props) {
   };
 
   const handleContinue = async () => {
+    if (!validateCurrentStep()) {
+      return;
+    }
+
     if (state.step === 6) {
       try {
         await completeFlow();
@@ -206,7 +227,13 @@ export function OnboardingFlow({ navigation }: Props) {
   const content = useMemo(() => {
     switch (state.step) {
       case 0:
-        return <OverviewStep />;
+        return (
+          <PersonalProfileStep
+            data={state.data}
+            updateData={updateData}
+            validationMessage={state.validationStep === 0 ? state.validationMessage : null}
+          />
+        );
       case 1:
         return (
           <RelationshipStep
@@ -276,9 +303,7 @@ export function OnboardingFlow({ navigation }: Props) {
             onPress={() => void handleContinue()}
             title={currentMeta.cta}
           />
-          {state.step === 0 ? (
-            <Text style={styles.helper}>Your progress is saved as you go.</Text>
-          ) : null}
+          <Text style={styles.helper}>Your progress is saved as you go.</Text>
         </>
       }
       header={

@@ -1,8 +1,17 @@
 export type Direction = 'forward' | 'back';
 
 export type DealbreakerValue = string;
+export type DistanceType = 'radius' | 'state' | 'open';
+export type DistanceRadiusMiles = 10 | 25 | 50 | 100;
+export type Gender = 'man' | 'woman' | 'prefer_not_to_say';
 
 export interface OnboardingData {
+  firstName?: string;
+  lastName?: string;
+  dateOfBirth?: string;
+  gender?: Gender;
+  cityState?: string;
+  bio?: string;
   relationshipGoal: string | null;
   spouseQualities: string[];
   communicationStyle: string | null;
@@ -16,6 +25,8 @@ export interface OnboardingData {
   authenticMeaning: string;
   ageRange: [number, number];
   distanceRange: [number, number];
+  distanceType: DistanceType;
+  distanceRadiusMiles: DistanceRadiusMiles;
   denominations: string[];
   dealbreakers: {
     smoking: DealbreakerValue;

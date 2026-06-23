@@ -1,6 +1,12 @@
 import { OnboardingAction, OnboardingData, OnboardingState } from '../../types/onboarding';
 
 export const initialOnboardingData: OnboardingData = {
+  firstName: '',
+  lastName: '',
+  dateOfBirth: undefined,
+  gender: undefined,
+  cityState: '',
+  bio: '',
   relationshipGoal: null,
   spouseQualities: [],
   communicationStyle: null,
@@ -14,6 +20,8 @@ export const initialOnboardingData: OnboardingData = {
   authenticMeaning: '',
   ageRange: [22, 35],
   distanceRange: [5, 50],
+  distanceType: 'open',
+  distanceRadiusMiles: 25,
   denominations: [],
   dealbreakers: {
     smoking: 'Prefer no',

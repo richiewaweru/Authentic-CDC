@@ -86,6 +86,14 @@ function mapProfileStatusRow(row: { onboarding_complete: boolean; user_state: Us
   };
 }
 
+function toDatabaseDate(value?: string) {
+  if (!value) {
+    return null;
+  }
+
+  return value.split('T')[0] ?? null;
+}
+
 export function mapOnboardingDataToResponsesPayload(userId: string, data: OnboardingData) {
   return {
     user_id: userId,
@@ -112,12 +120,16 @@ export function mapOnboardingDataToResponsesPayload(userId: string, data: Onboar
 }
 
 export function mapOnboardingDataToPreferencesPayload(userId: string, data: OnboardingData) {
+  const isRadius = data.distanceType === 'radius';
+
   return {
     user_id: userId,
     age_min: data.ageRange[0],
     age_max: data.ageRange[1],
-    distance_min: data.distanceRange[0],
-    distance_max: data.distanceRange[1],
+    distance_type: data.distanceType,
+    distance_radius_miles: isRadius ? data.distanceRadiusMiles : null,
+    distance_min: isRadius ? 0 : null,
+    distance_max: isRadius ? data.distanceRadiusMiles : null,
     denominations: data.denominations,
     dealbreaker_smoking: data.dealbreakers.smoking,
     dealbreaker_children: data.dealbreakers.children,
@@ -183,6 +195,15 @@ export const onboardingService = {
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
       .update({
+        first_name: data.firstName?.trim() || null,
+        last_name: data.lastName?.trim() || null,
+        date_of_birth: toDatabaseDate(data.dateOfBirth),
+        gender: data.gender ?? null,
+        city_state: data.cityState?.trim() || null,
+        bio: data.bio?.trim() || null,
+        display_name: data.firstName
+          ? `${data.firstName.trim()} ${data.lastName?.trim() ?? ''}`.trim()
+          : null,
         onboarding_complete: true,
         user_state: 'onboarding_complete',
       })

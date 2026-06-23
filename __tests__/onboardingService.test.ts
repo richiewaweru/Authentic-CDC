@@ -13,6 +13,12 @@ import {
 import type { OnboardingData } from '../src/types/onboarding';
 
 const sampleOnboardingData: OnboardingData = {
+  firstName: 'Ada',
+  lastName: 'Love',
+  dateOfBirth: '1992-05-10T00:00:00.000Z',
+  gender: 'woman',
+  cityState: 'Atlanta, GA',
+  bio: 'Faith-focused and community-minded.',
   relationshipGoal: 'Friendship first',
   spouseQualities: ['Kindness', 'Honesty'],
   communicationStyle: 'Calm & reflective',
@@ -26,6 +32,8 @@ const sampleOnboardingData: OnboardingData = {
   authenticMeaning: 'Living truthfully before God and people.',
   ageRange: [25, 34],
   distanceRange: [10, 40],
+  distanceType: 'radius',
+  distanceRadiusMiles: 25,
   denominations: ['Non-denominational', 'Baptist'],
   dealbreakers: {
     smoking: 'Prefer no',
@@ -75,8 +83,10 @@ describe('onboarding service', () => {
       user_id: 'user-1',
       age_min: 25,
       age_max: 34,
-      distance_min: 10,
-      distance_max: 40,
+      distance_type: 'radius',
+      distance_radius_miles: 25,
+      distance_min: 0,
+      distance_max: 25,
       denominations: ['Non-denominational', 'Baptist'],
       dealbreaker_smoking: 'Prefer no',
       dealbreaker_children: 'Open to kids',
@@ -135,6 +145,13 @@ describe('onboarding service', () => {
       { onConflict: 'user_id' },
     );
     expect(profileUpdate).toHaveBeenCalledWith({
+      first_name: 'Ada',
+      last_name: 'Love',
+      date_of_birth: '1992-05-10',
+      gender: 'woman',
+      city_state: 'Atlanta, GA',
+      bio: 'Faith-focused and community-minded.',
+      display_name: 'Ada Love',
       onboarding_complete: true,
       user_state: 'onboarding_complete',
     });
@@ -175,5 +192,21 @@ describe('onboarding service', () => {
         communicationStyle: 'Unknown style',
       }),
     ).toThrow('One of your responses could not be saved. Please try again.');
+  });
+
+  it('nulls backward-compatible distance bounds when preference is not radius', () => {
+    expect(
+      mapOnboardingDataToPreferencesPayload('user-1', {
+        ...sampleOnboardingData,
+        distanceType: 'open',
+      }),
+    ).toEqual(
+      expect.objectContaining({
+        distance_type: 'open',
+        distance_radius_miles: null,
+        distance_min: null,
+        distance_max: null,
+      }),
+    );
   });
 });

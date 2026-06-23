@@ -41,6 +41,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     'expo-status-bar',
     ['expo-web-browser', { experimentalLauncherActivity: false }],
     'expo-secure-store',
+    '@react-native-community/datetimepicker',
     ...(googleSignInPlugin ? [googleSignInPlugin] : []),
   ],
   extra: {

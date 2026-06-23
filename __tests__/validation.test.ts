@@ -4,6 +4,9 @@ import { initialOnboardingData } from '../src/screens/onboarding/state';
 describe('onboardingSchema', () => {
   const validData = {
     ...initialOnboardingData,
+    firstName: 'Ada',
+    dateOfBirth: '1992-05-10T00:00:00.000Z',
+    gender: 'woman' as const,
     relationshipGoal: 'Intentional dating',
     communicationStyle: 'Calm & reflective',
     conflictStyle: 'I prefer calm discussion',
@@ -11,6 +14,8 @@ describe('onboardingSchema', () => {
     sharedFaith: 'Essential',
     churchInvolvement: 'Weekly active',
     futureHopes: 'Build a peaceful, faith-centered home.',
+    distanceType: 'radius' as const,
+    distanceRadiusMiles: 25 as const,
   };
 
   it('accepts the minimum required fields when ranges are valid', () => {
@@ -20,6 +25,7 @@ describe('onboardingSchema', () => {
   });
 
   it.each([
+    ['firstName', '', 'Please enter your first name.'],
     ['relationshipGoal', null, 'Choose the relationship you are seeking.'],
     ['communicationStyle', null, 'Choose the communication style that best fits you.'],
     ['conflictStyle', null, 'Choose how you usually handle conflict.'],
@@ -34,6 +40,26 @@ describe('onboardingSchema', () => {
 
     expect(result.success).toBe(false);
     expect(result.error?.issues[0]?.message).toBe(message);
+  });
+
+  it('rejects missing gender', () => {
+    const result = onboardingSchema.safeParse({
+      ...validData,
+      gender: undefined,
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.message).toBe('Please select one.');
+  });
+
+  it('rejects users under 18', () => {
+    const result = onboardingSchema.safeParse({
+      ...validData,
+      dateOfBirth: '2012-01-01T00:00:00.000Z',
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.message).toBe('You must be at least 18 to join.');
   });
 
   it('rejects empty future hopes', () => {
@@ -64,5 +90,15 @@ describe('onboardingSchema', () => {
 
     expect(result.success).toBe(false);
     expect(result.error?.issues[0]?.message).toBe('Choose a valid distance range.');
+  });
+
+  it('accepts nearby distance preferences with supported radius values', () => {
+    const result = onboardingSchema.safeParse({
+      ...validData,
+      distanceType: 'radius',
+      distanceRadiusMiles: 100,
+    });
+
+    expect(result.success).toBe(true);
   });
 });
