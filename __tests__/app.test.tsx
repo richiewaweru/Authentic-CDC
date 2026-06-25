@@ -32,7 +32,10 @@ const mockCompletePendingAuthSession = jest.fn();
 const mockGetSession = jest.fn();
 const mockSubscribeToAuthChanges = jest.fn();
 const mockGetProfileStatus = jest.fn();
+const mockFetchConfirmedBookingForCurrentUser = jest.fn();
+const mockRegisterForPushNotifications = jest.fn();
 const mockSetAuthReady = jest.fn();
+const mockSetConfirmedBooking = jest.fn();
 const mockSetSession = jest.fn();
 
 jest.mock('../src/services/authService', () => ({
@@ -49,10 +52,26 @@ jest.mock('../src/services/onboardingService', () => ({
   },
 }));
 
+jest.mock('../src/services/slotService', () => ({
+  fetchConfirmedBookingForCurrentUser: (...args: unknown[]) =>
+    mockFetchConfirmedBookingForCurrentUser(...args),
+}));
+
+jest.mock('../src/services/pushNotificationService', () => ({
+  registerForPushNotifications: (...args: unknown[]) => mockRegisterForPushNotifications(...args),
+}));
+
 jest.mock('../src/stores/authStore', () => ({
-  useAuthStore: (selector: (state: { setAuthReady: typeof mockSetAuthReady; setSession: typeof mockSetSession }) => unknown) =>
+  useAuthStore: (
+    selector: (state: {
+      setAuthReady: typeof mockSetAuthReady;
+      setConfirmedBooking: typeof mockSetConfirmedBooking;
+      setSession: typeof mockSetSession;
+    }) => unknown,
+  ) =>
     selector({
       setAuthReady: mockSetAuthReady,
+      setConfirmedBooking: mockSetConfirmedBooking,
       setSession: mockSetSession,
     }),
 }));
@@ -76,7 +95,10 @@ describe('App auth session sync', () => {
     mockGetSession.mockReset();
     mockSubscribeToAuthChanges.mockReset();
     mockGetProfileStatus.mockReset();
+    mockFetchConfirmedBookingForCurrentUser.mockReset();
+    mockRegisterForPushNotifications.mockReset();
     mockSetAuthReady.mockReset();
+    mockSetConfirmedBooking.mockReset();
     mockSetSession.mockReset();
   });
 
@@ -88,12 +110,15 @@ describe('App auth session sync', () => {
     mockCompletePendingAuthSession.mockResolvedValue(null);
     mockGetSession.mockResolvedValue(session);
     mockGetProfileStatus.mockRejectedValue(new Error('profile query failed'));
+    mockFetchConfirmedBookingForCurrentUser.mockResolvedValue(null);
     mockSubscribeToAuthChanges.mockReturnValue(jest.fn());
 
     render(<App />);
 
     await waitFor(() => {
       expect(mockSetSession).toHaveBeenCalledWith(session, null);
+      expect(mockRegisterForPushNotifications).toHaveBeenCalledWith('user-1');
+      expect(mockSetConfirmedBooking).toHaveBeenCalledWith(null);
       expect(mockSetAuthReady).toHaveBeenCalledWith(true);
     });
   });
@@ -104,6 +129,7 @@ describe('App auth session sync', () => {
     mockCompletePendingAuthSession.mockResolvedValue(null);
     mockGetSession.mockResolvedValue(null);
     mockGetProfileStatus.mockRejectedValue(new Error('profile query failed'));
+    mockFetchConfirmedBookingForCurrentUser.mockResolvedValue(null);
     mockSubscribeToAuthChanges.mockImplementation((handler) => {
       authChangeHandler = handler;
       return jest.fn();

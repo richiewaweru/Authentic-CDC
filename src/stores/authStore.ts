@@ -27,6 +27,7 @@ interface AuthState {
   signOut: () => Promise<void>;
   setBookingSelection: (selection: BookingSelection | null) => void;
   confirmBooking: (booking: BookingRecord) => void;
+  setConfirmedBooking: (booking: BookingRecord | null) => void;
   clearBooking: () => void;
   rescheduleBooking: () => Promise<void>;
 }
@@ -101,6 +102,7 @@ export const useAuthStore = create<AuthState>()(
       },
       setBookingSelection: (selection) => set({ bookingSelection: selection }),
       confirmBooking: (booking) => set({ confirmedBooking: booking }),
+      setConfirmedBooking: (booking) => set({ confirmedBooking: booking }),
       clearBooking: () => set({ bookingSelection: null, confirmedBooking: null }),
       rescheduleBooking: async () => {
         const booking = get().confirmedBooking;

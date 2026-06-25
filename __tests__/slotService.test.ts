@@ -10,6 +10,7 @@ jest.mock('../src/config/supabase', () => ({
 import { supabase } from '../src/config/supabase';
 import {
   bookSlot,
+  fetchConfirmedBookingForCurrentUser,
   fetchAvailableSlots,
   fetchGuides,
   releaseSlot,
@@ -118,6 +119,7 @@ describe('slotService', () => {
         guide_id: 'guide-1',
         slot_date: '2026-06-20',
         slot_time: '09:00:00',
+        starts_at: '2026-06-20T09:00:00.000Z',
         duration_minutes: 30,
         status: 'open',
       },
@@ -136,6 +138,21 @@ describe('slotService', () => {
     const eqBookingUser = jest.fn(() => ({ eq: eqBookingSlot }));
     const selectExistingBooking = jest.fn(() => ({ eq: eqBookingUser }));
     const bookingInsert = jest.fn().mockResolvedValue({ error: null });
+    const maybeSingleConfirmedBooking = jest.fn().mockResolvedValue({
+      data: {
+        id: 'booking-1',
+        meeting_link: 'https://meet.example.com/abc',
+      },
+      error: null,
+    });
+    const limitConfirmedBooking = jest.fn(() => ({ maybeSingle: maybeSingleConfirmedBooking }));
+    const orderConfirmedBooking = jest.fn(() => ({ limit: limitConfirmedBooking }));
+    const eqConfirmedStatus = jest.fn(() => ({ order: orderConfirmedBooking }));
+    const eqConfirmedSlot = jest.fn(() => ({ eq: eqConfirmedStatus }));
+    const eqConfirmedUser = jest.fn(() => ({ eq: eqConfirmedSlot }));
+    const selectConfirmedBooking = jest.fn(() => ({ eq: eqConfirmedUser }));
+
+    let bookingsCallCount = 0;
 
     fromMock.mockImplementation((table: string) => {
       if (table === 'available_slots') {
@@ -145,8 +162,10 @@ describe('slotService', () => {
       }
 
       if (table === 'bookings') {
+        bookingsCallCount += 1;
+
         return {
-          select: selectExistingBooking,
+          select: bookingsCallCount === 1 ? selectExistingBooking : selectConfirmedBooking,
           insert: bookingInsert,
         };
       }
@@ -154,7 +173,11 @@ describe('slotService', () => {
       throw new Error(`Unexpected table: ${table}`);
     });
 
-    await expect(bookSlot('slot-1')).resolves.toBeUndefined();
+    await expect(bookSlot('slot-1')).resolves.toEqual({
+      bookingId: 'booking-1',
+      meetingLink: 'https://meet.example.com/abc',
+      startsAt: '2026-06-20T09:00:00.000Z',
+    });
     expect(bookingInsert).toHaveBeenCalledWith(
       expect.objectContaining({
         user_id: 'user-1',
@@ -167,6 +190,99 @@ describe('slotService', () => {
         payment_status: 'pending',
       }),
     );
+  });
+
+  it('hydrates the current confirmed booking for the signed-in user', async () => {
+    getUserMock.mockResolvedValue({
+      data: {
+        user: {
+          id: 'user-1',
+        },
+      },
+    });
+
+    const maybeSingleBooking = jest.fn().mockResolvedValue({
+      data: {
+        id: 'booking-1',
+        guide_id: 'guide-1',
+        slot_id: 'slot-1',
+        slot_date: '2026-06-20',
+        slot_time: '09:00:00',
+        duration_minutes: 30,
+        meeting_link: 'https://meet.example.com/abc',
+        status: 'confirmed',
+        cancelled_at: null,
+        cancel_reason: null,
+      },
+      error: null,
+    });
+    const limitBooking = jest.fn(() => ({ maybeSingle: maybeSingleBooking }));
+    const orderBooking = jest.fn(() => ({ limit: limitBooking }));
+    const eqBookingStatus = jest.fn(() => ({ order: orderBooking }));
+    const eqBookingUser = jest.fn(() => ({ eq: eqBookingStatus }));
+    const selectBooking = jest.fn(() => ({ eq: eqBookingUser }));
+
+    const maybeSingleGuide = jest.fn().mockResolvedValue({
+      data: {
+        id: 'guide-1',
+        display_name: 'Ada Love',
+        name: null,
+        title: 'Lead Guide',
+        initials: null,
+        avatar_url: 'https://example.com/ada.jpg',
+      },
+      error: null,
+    });
+    const eqGuide = jest.fn(() => ({ maybeSingle: maybeSingleGuide }));
+    const selectGuide = jest.fn(() => ({ eq: eqGuide }));
+
+    const maybeSingleSlot = jest.fn().mockResolvedValue({
+      data: {
+        starts_at: '2026-06-20T09:00:00.000Z',
+      },
+      error: null,
+    });
+    const eqSlot = jest.fn(() => ({ maybeSingle: maybeSingleSlot }));
+    const selectSlot = jest.fn(() => ({ eq: eqSlot }));
+
+    fromMock.mockImplementation((table: string) => {
+      if (table === 'bookings') {
+        return { select: selectBooking };
+      }
+
+      if (table === 'guide_profiles') {
+        return { select: selectGuide };
+      }
+
+      if (table === 'available_slots') {
+        return { select: selectSlot };
+      }
+
+      throw new Error(`Unexpected table: ${table}`);
+    });
+
+    await expect(fetchConfirmedBookingForCurrentUser()).resolves.toEqual({
+      bookingId: 'booking-1',
+      slotId: 'slot-1',
+      meetingLink: 'https://meet.example.com/abc',
+      startsAt: '2026-06-20T09:00:00.000Z',
+      endTime: '9:30 AM',
+      status: 'confirmed',
+      guide: {
+        id: 'guide-1',
+        name: 'Ada Love',
+        title: 'Lead Guide',
+        initials: 'AL',
+        avatarUrl: 'https://example.com/ada.jpg',
+      },
+      slot: {
+        id: 'slot-1',
+        guideId: 'guide-1',
+        date: '2026-06-20',
+        time: '9:00 AM',
+        durationMinutes: 30,
+      },
+    });
   });
 
   it('releases a live booking by cancelling the booking row', async () => {

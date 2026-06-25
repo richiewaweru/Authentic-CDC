@@ -20,6 +20,8 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { RootNavigator } from './navigation/RootNavigator';
 import { authService } from './services/authService';
 import { onboardingService } from './services/onboardingService';
+import { registerForPushNotifications } from './services/pushNotificationService';
+import { fetchConfirmedBookingForCurrentUser } from './services/slotService';
 import { useAuthStore } from './stores/authStore';
 import { colors } from './theme';
 
@@ -40,6 +42,7 @@ const navigationTheme = {
 export default function App() {
   const setAuthReady = useAuthStore((state) => state.setAuthReady);
   const setSession = useAuthStore((state) => state.setSession);
+  const setConfirmedBooking = useAuthStore((state) => state.setConfirmedBooking);
   const [interLoaded] = useInterFonts({
     Inter_400Regular,
     Inter_500Medium,
@@ -77,6 +80,21 @@ export default function App() {
       }
 
       setSession(session, profileStatus);
+
+      if (session.user.id) {
+        void registerForPushNotifications(session.user.id);
+        void (async () => {
+          try {
+            const confirmedBooking = await fetchConfirmedBookingForCurrentUser();
+
+            if (mounted) {
+              setConfirmedBooking(confirmedBooking);
+            }
+          } catch (error) {
+            console.error('Could not refresh confirmed booking:', error);
+          }
+        })();
+      }
     };
 
     const bootstrapAuth = async () => {
@@ -111,7 +129,7 @@ export default function App() {
       mounted = false;
       unsubscribe?.();
     };
-  }, [setAuthReady, setSession]);
+  }, [setAuthReady, setConfirmedBooking, setSession]);
 
   if (!interLoaded || !playfairLoaded) {
     return (

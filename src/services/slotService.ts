@@ -2,9 +2,16 @@ import { mockGuides } from '../mocks/guides';
 import { mockSlots } from '../mocks/slots';
 import { getSlotDataSource } from '../config/env';
 import { supabase } from '../config/supabase';
-import { Guide, Slot } from '../types/booking';
+import { addMinutesToTime } from '../utils/date';
+import { BookingRecord, Guide, Slot } from '../types/booking';
 
 const DATA_SOURCE = getSlotDataSource();
+
+interface BookSlotResult {
+  bookingId: string;
+  meetingLink: string | null;
+  startsAt: string | null;
+}
 
 export async function fetchGuides(): Promise<Guide[]> {
   if (DATA_SOURCE === 'supabase') {
@@ -22,10 +29,16 @@ export async function fetchAvailableSlots(guideId: string): Promise<Slot[]> {
   return fetchSlotsFromMock(guideId);
 }
 
-export async function bookSlot(slotId: string): Promise<void> {
+export async function bookSlot(slotId: string): Promise<BookSlotResult> {
   if (DATA_SOURCE === 'supabase') {
     return bookSlotInSupabase(slotId);
   }
+
+  return {
+    bookingId: '',
+    meetingLink: null,
+    startsAt: null,
+  };
 }
 
 export async function releaseSlot(slotId: string): Promise<void> {
@@ -94,7 +107,94 @@ async function fetchSlotsFromSupabase(guideId: string): Promise<Slot[]> {
   }));
 }
 
-async function bookSlotInSupabase(slotId: string): Promise<void> {
+export async function fetchConfirmedBookingForCurrentUser(): Promise<BookingRecord | null> {
+  if (DATA_SOURCE !== 'supabase') {
+    return null;
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return null;
+  }
+
+  const { data: booking, error: bookingError } = await supabase
+    .from('bookings')
+    .select(
+      'id, guide_id, slot_id, slot_date, slot_time, duration_minutes, meeting_link, status, cancelled_at, cancel_reason',
+    )
+    .eq('user_id', user.id)
+    .eq('status', 'confirmed')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (bookingError) {
+    console.error('Failed to fetch confirmed booking:', bookingError);
+    throw new Error('Could not load your confirmed booking.');
+  }
+
+  if (!booking) {
+    return null;
+  }
+
+  const [{ data: guide, error: guideError }, { data: slotDetails, error: slotError }] =
+    await Promise.all([
+      supabase
+        .from('guide_profiles')
+        .select('id, display_name, name, title, initials, avatar_url')
+        .eq('id', booking.guide_id)
+        .maybeSingle(),
+      supabase
+        .from('available_slots')
+        .select('starts_at')
+        .eq('id', booking.slot_id)
+        .maybeSingle(),
+    ]);
+
+  if (guideError) {
+    console.error('Failed to fetch guide for confirmed booking:', guideError);
+    throw new Error('Could not load your confirmed booking.');
+  }
+
+  if (slotError) {
+    console.error('Failed to fetch slot timing for confirmed booking:', slotError);
+    throw new Error('Could not load your confirmed booking.');
+  }
+
+  const guideName = guide?.display_name || guide?.name || 'Guide';
+  const displayTime = formatSlotTime(booking.slot_time ?? '00:00:00');
+  const durationMinutes = booking.duration_minutes ?? 30;
+
+  return {
+    bookingId: booking.id,
+    slotId: booking.slot_id,
+    meetingLink: booking.meeting_link ?? null,
+    startsAt: slotDetails?.starts_at ?? null,
+    endTime: addMinutesToTime(displayTime, durationMinutes),
+    status: booking.status,
+    cancelledAt: booking.cancelled_at ?? undefined,
+    cancelReason: booking.cancel_reason ?? undefined,
+    guide: {
+      id: booking.guide_id,
+      name: guideName,
+      title: guide?.title || 'Community Guide',
+      initials: guide?.initials || buildInitials(guideName),
+      avatarUrl: guide?.avatar_url ?? null,
+    },
+    slot: {
+      id: booking.slot_id,
+      guideId: booking.guide_id,
+      date: booking.slot_date ?? '',
+      time: displayTime,
+      durationMinutes,
+    },
+  };
+}
+
+async function bookSlotInSupabase(slotId: string): Promise<BookSlotResult> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -105,7 +205,7 @@ async function bookSlotInSupabase(slotId: string): Promise<void> {
 
   const { data: slot, error: slotError } = await supabase
     .from('available_slots')
-    .select('id, guide_id, slot_date, slot_time, duration_minutes, status')
+    .select('id, guide_id, slot_date, slot_time, starts_at, duration_minutes, status')
     .eq('id', slotId)
     .single();
 
@@ -153,6 +253,27 @@ async function bookSlotInSupabase(slotId: string): Promise<void> {
     console.error('Failed to create booking:', bookingError);
     throw new Error('Could not complete your booking. Please try again.');
   }
+
+  const { data: confirmedBooking, error: confirmedBookingError } = await supabase
+    .from('bookings')
+    .select('id, meeting_link')
+    .eq('user_id', user.id)
+    .eq('slot_id', slotId)
+    .eq('status', 'confirmed')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (confirmedBookingError) {
+    console.error('Failed to fetch booking after creation:', confirmedBookingError);
+    throw new Error('Could not complete your booking. Please try again.');
+  }
+
+  return {
+    bookingId: confirmedBooking?.id ?? '',
+    meetingLink: confirmedBooking?.meeting_link ?? null,
+    startsAt: slot.starts_at ?? null,
+  };
 }
 
 async function releaseSlotInSupabase(slotId: string): Promise<void> {

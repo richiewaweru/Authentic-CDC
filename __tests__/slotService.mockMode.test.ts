@@ -47,4 +47,14 @@ describe('slotService mock mode', () => {
     jest.runOnlyPendingTimers();
     jest.useRealTimers();
   });
+
+  it('returns an empty booking metadata object when mock mode books a slot', async () => {
+    const { bookSlot } = require('../src/services/slotService') as typeof import('../src/services/slotService');
+
+    await expect(bookSlot('slot-1')).resolves.toEqual({
+      bookingId: '',
+      meetingLink: null,
+      startsAt: null,
+    });
+  });
 });

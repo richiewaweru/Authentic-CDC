@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Linking, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -30,6 +30,10 @@ export function PendingHomeScreen({ navigation }: Props) {
   const rescheduleBooking = useAuthStore((state) => state.rescheduleBooking);
   const signOut = useAuthStore((state) => state.signOut);
   const [rescheduling, setRescheduling] = React.useState(false);
+  const startsAt = booking?.startsAt ? new Date(booking.startsAt) : null;
+  const hoursUntil = startsAt ? (startsAt.getTime() - Date.now()) / (1000 * 60 * 60) : null;
+  const isUrgent = hoursUntil !== null && hoursUntil > 0 && hoursUntil <= 1;
+  const isUpcoming = hoursUntil !== null && hoursUntil > 1 && hoursUntil <= 24;
 
   const handleReschedule = async () => {
     const confirmed = await confirmDialog({
@@ -130,6 +134,22 @@ export function PendingHomeScreen({ navigation }: Props) {
           </Text>
         </View>
 
+        {isUrgent ? (
+          <View style={styles.urgentBanner}>
+            <Ionicons color={colors.goldDark} name="time-outline" size={18} />
+            <Text style={styles.bannerText}>
+              Your Alignment Conversation starts in less than an hour
+            </Text>
+          </View>
+        ) : null}
+
+        {isUpcoming && !isUrgent ? (
+          <View style={styles.reminderBanner}>
+            <Ionicons color={colors.primary} name="calendar-outline" size={18} />
+            <Text style={styles.bannerText}>Your Alignment Conversation is tomorrow</Text>
+          </View>
+        ) : null}
+
         <Card style={styles.bookingCard}>
           <GuideCard guide={booking.guide} />
           <Text style={styles.bookingDetail}>{formatDateLabel(booking.slot.date)}</Text>
@@ -143,6 +163,27 @@ export function PendingHomeScreen({ navigation }: Props) {
               variant="outlined"
             />
           </View>
+          {booking.meetingLink ? (
+            <Button
+              onPress={async () => {
+                try {
+                  const supported = await Linking.canOpenURL(booking.meetingLink!);
+                  if (supported) {
+                    await Linking.openURL(booking.meetingLink!);
+                  } else {
+                    Alert.alert('Cannot open link', `Link: ${booking.meetingLink}`);
+                  }
+                } catch {
+                  Alert.alert('Cannot open link', `Link: ${booking.meetingLink}`);
+                }
+              }}
+              title="Join Conversation"
+            />
+          ) : (
+            <Text style={styles.meetingLinkPending}>
+              Your guide will share the meeting link before your scheduled time.
+            </Text>
+          )}
         </Card>
 
         <View style={styles.statusTracker}>
@@ -221,12 +262,43 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     gap: spacing.md,
   },
+  urgentBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: '#FFF8E1',
+    borderRadius: 12,
+    padding: spacing.md,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.goldDark,
+  },
+  reminderBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.primaryContainer,
+    borderRadius: 12,
+    padding: spacing.md,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.primary,
+  },
+  bannerText: {
+    ...typography.bodyMd,
+    color: colors.onSurface,
+    flex: 1,
+  },
   bookingDetail: {
     ...typography.bodyMd,
     color: colors.onSurface,
   },
   cardButtons: {
     gap: spacing.sm,
+  },
+  meetingLinkPending: {
+    ...typography.bodySm,
+    color: colors.onSurfaceVariant,
+    fontStyle: 'italic',
+    textAlign: 'center',
   },
   statusTracker: {
     gap: spacing.sm,

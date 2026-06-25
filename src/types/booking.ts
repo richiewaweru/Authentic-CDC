@@ -21,8 +21,11 @@ export interface BookingSelection {
 
 export interface BookingRecord extends BookingSelection {
   id?: string;
+  bookingId?: string;
   slotId?: string;
   googleEventId?: string;
+  meetingLink?: string | null;
+  startsAt?: string | null;
   endTime: string;
   status: 'confirmed' | 'cancelled';
   cancelledAt?: string;

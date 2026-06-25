@@ -9,6 +9,7 @@ import { Card } from '../../components/ui/Card';
 import { ScreenHeader } from '../../components/ui/ScreenHeader';
 import { CONFIRMATION_FEE } from '../../constants/fees';
 import { BookingStackParamList } from '../../navigation/types';
+import { supabase } from '../../config/supabase';
 import { bookSlot } from '../../services/slotService';
 import { useAuthStore } from '../../stores/authStore';
 import { colors, spacing, typography } from '../../theme';
@@ -17,9 +18,30 @@ import { addMinutesToTime } from '../../utils/date';
 
 type Props = NativeStackScreenProps<BookingStackParamList, 'ConfirmBooking'>;
 
+function formatDateForEmail(slotDate: string): string {
+  const [year, month, day] = slotDate.split('-').map(Number);
+  return new Date(year, month - 1, day).toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+  });
+}
+
+function formatTimeForEmail(slotTime: string): string {
+  if (slotTime.includes('AM') || slotTime.includes('PM')) {
+    return slotTime;
+  }
+
+  const [hour, minute] = slotTime.slice(0, 5).split(':').map(Number);
+  const period = hour >= 12 ? 'PM' : 'AM';
+  const hours12 = hour % 12 || 12;
+  return `${hours12}:${String(minute).padStart(2, '0')} ${period}`;
+}
+
 export function ConfirmBookingScreen({ navigation }: Props) {
   const selection = useAuthStore((state) => state.bookingSelection);
   const confirmBooking = useAuthStore((state) => state.confirmBooking);
+  const user = useAuthStore((state) => state.user);
   const [loading, setLoading] = useState(false);
 
   const handlePay = async () => {
@@ -35,14 +57,37 @@ export function ConfirmBookingScreen({ navigation }: Props) {
     setLoading(true);
 
     try {
-      await bookSlot(selection.slot.id);
+      const { bookingId, meetingLink, startsAt } = await bookSlot(selection.slot.id);
 
       confirmBooking({
         ...selection,
+        bookingId,
         slotId: selection.slot.id,
+        meetingLink,
+        startsAt,
         endTime: addMinutesToTime(selection.slot.time, selection.slot.durationMinutes),
         status: 'confirmed',
       });
+
+      const fireConfirmationEmail = async () => {
+        try {
+          await supabase.functions.invoke('send-booking-confirmation', {
+            body: {
+              bookingId,
+              userEmail: user?.email ?? '',
+              userFirstName: user?.displayName?.split(' ')[0] ?? user?.email?.split('@')[0] ?? 'there',
+              guideName: selection.guide.name,
+              guideTitle: selection.guide.title || 'Community Guide',
+              slotDate: formatDateForEmail(selection.slot.date),
+              slotTime: formatTimeForEmail(selection.slot.time),
+              durationMinutes: selection.slot.durationMinutes,
+            },
+          });
+        } catch (error) {
+          console.warn('[Email] Booking confirmation failed:', error);
+        }
+      };
+      void fireConfirmationEmail();
 
       navigation.navigate('BookingConfirmed');
     } catch (error) {

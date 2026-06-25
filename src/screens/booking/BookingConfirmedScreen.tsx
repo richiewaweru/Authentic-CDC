@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Linking, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -10,9 +10,33 @@ import { ScreenHeader } from '../../components/ui/ScreenHeader';
 import { BookingStackParamList } from '../../navigation/types';
 import { useAuthStore } from '../../stores/authStore';
 import { colors, spacing, typography } from '../../theme';
-import { showInfoDialog } from '../../utils/dialogs';
+import { timeTo24Hour } from '../../utils/date';
 
 type Props = NativeStackScreenProps<BookingStackParamList, 'BookingConfirmed'>;
+
+function buildGoogleCalendarUrl(params: {
+  guideName: string;
+  slotDate: string;
+  slotTime: string;
+  durationMinutes: number;
+}): string {
+  const [year, month, day] = params.slotDate.split('-').map(Number);
+  const { hours, minutes } = timeTo24Hour(params.slotTime);
+  const start = new Date(year, month - 1, day, hours, minutes);
+  const end = new Date(start.getTime() + params.durationMinutes * 60 * 1000);
+  const fmt = (date: Date) => date.toISOString().replace(/[-:.]/g, '').slice(0, 15) + 'Z';
+
+  const qs = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: `Alignment Conversation with ${params.guideName}`,
+    dates: `${fmt(start)}/${fmt(end)}`,
+    details:
+      'Your Authentic CDC Alignment Conversation. Your guide will share the meeting link before your scheduled time.',
+    location: 'Virtual',
+  });
+
+  return `https://calendar.google.com/calendar/render?${qs.toString()}`;
+}
 
 export function BookingConfirmedScreen({ navigation }: Props) {
   const confirmedBooking = useAuthStore((state) => state.confirmedBooking);
@@ -33,20 +57,32 @@ export function BookingConfirmedScreen({ navigation }: Props) {
       footer={
         <>
           <Button
-            onPress={() => showInfoDialog('Calendar support', 'Calendar export will be connected later.')}
-            title="Add to Calendar"
+            onPress={async () => {
+              if (!confirmedBooking) {
+                return;
+              }
+
+              const url = buildGoogleCalendarUrl({
+                guideName: confirmedBooking.guide.name,
+                slotDate: confirmedBooking.slot.date,
+                slotTime: confirmedBooking.slot.time,
+                durationMinutes: confirmedBooking.slot.durationMinutes ?? 30,
+              });
+
+              try {
+                const supported = await Linking.canOpenURL(url);
+                if (supported) {
+                  await Linking.openURL(url);
+                } else {
+                  Alert.alert('Cannot open calendar', 'Please add the event to your calendar manually.');
+                }
+              } catch {
+                Alert.alert('Cannot open calendar', 'Please add the event to your calendar manually.');
+              }
+            }}
+            title="Add to Google Calendar"
             variant="outlined"
           />
-          <TouchableOpacity
-            accessibilityLabel="Connect Google Calendar to sync automatically"
-            accessibilityRole="button"
-            activeOpacity={0.8}
-            onPress={() =>
-              showInfoDialog('Google Calendar sync', 'Google Calendar sync will be available soon.')
-            }
-          >
-            <Text style={styles.link}>Or connect Google Calendar to sync automatically</Text>
-          </TouchableOpacity>
           <Button onPress={() => navigation.navigate('PendingHome')} title="Go to Pending Access" />
         </>
       }
@@ -103,11 +139,5 @@ const styles = StyleSheet.create({
     ...typography.bodyMd,
     color: colors.onSurfaceVariant,
     textAlign: 'center',
-  },
-  link: {
-    ...typography.bodySm,
-    color: colors.primary,
-    textAlign: 'center',
-    textDecorationLine: 'underline',
   },
 });
