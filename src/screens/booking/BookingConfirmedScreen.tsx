@@ -19,10 +19,15 @@ function buildGoogleCalendarUrl(params: {
   slotDate: string;
   slotTime: string;
   durationMinutes: number;
+  startsAt?: string | null;
 }): string {
-  const [year, month, day] = params.slotDate.split('-').map(Number);
-  const { hours, minutes } = timeTo24Hour(params.slotTime);
-  const start = new Date(year, month - 1, day, hours, minutes);
+  const start = params.startsAt
+    ? new Date(params.startsAt)
+    : (() => {
+        const [year, month, day] = params.slotDate.split('-').map(Number);
+        const { hours, minutes } = timeTo24Hour(params.slotTime);
+        return new Date(year, month - 1, day, hours, minutes);
+      })();
   const end = new Date(start.getTime() + params.durationMinutes * 60 * 1000);
   const fmt = (date: Date) => date.toISOString().replace(/[-:.]/g, '').slice(0, 15) + 'Z';
 
@@ -67,6 +72,7 @@ export function BookingConfirmedScreen({ navigation }: Props) {
                 slotDate: confirmedBooking.slot.date,
                 slotTime: confirmedBooking.slot.time,
                 durationMinutes: confirmedBooking.slot.durationMinutes ?? 30,
+                startsAt: confirmedBooking.startsAt,
               });
 
               try {

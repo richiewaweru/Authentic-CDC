@@ -17,7 +17,8 @@ jest.mock('@expo/vector-icons', () => ({
 }));
 
 import React from 'react';
-import { render } from '@testing-library/react-native';
+import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { Linking } from 'react-native';
 
 import { BookingConfirmedScreen } from '../src/screens/booking/BookingConfirmedScreen';
 import { PendingHomeScreen } from '../src/screens/booking/PendingHomeScreen';
@@ -61,17 +62,25 @@ describe('booking screens', () => {
     jest.setSystemTime(new Date('2026-06-19T20:00:00.000Z'));
     mockRescheduleBooking.mockReset();
     mockSignOut.mockReset();
+    jest.spyOn(Linking, 'canOpenURL').mockResolvedValue(true);
+    jest.spyOn(Linking, 'openURL').mockResolvedValue();
     mockStoreState = {
       ...mockStoreState,
       confirmedBooking: {
         ...mockStoreState.confirmedBooking,
         meetingLink: null,
         startsAt: null,
+        slot: {
+          ...mockStoreState.confirmedBooking.slot,
+          date: '2026-06-20',
+          time: '9:00 AM',
+        },
       },
     };
   });
 
   afterEach(() => {
+    jest.restoreAllMocks();
     jest.useRealTimers();
   });
 
@@ -85,6 +94,18 @@ describe('booking screens', () => {
 
     expect(getByText('Add to Google Calendar')).toBeTruthy();
     expect(queryByText('Or connect Google Calendar to sync automatically')).toBeNull();
+  });
+
+  it('renders the pending booking date and time from slot text fields', () => {
+    const { getByText } = render(
+      <PendingHomeScreen
+        navigation={{ goBack: jest.fn(), navigate: jest.fn() } as never}
+        route={{ key: 'PendingHome-test', name: 'PendingHome' } as never}
+      />,
+    );
+
+    expect(getByText('Saturday, June 20')).toBeTruthy();
+    expect(getByText('9:00 AM')).toBeTruthy();
   });
 
   it('shows the pending meeting-link copy when no meeting link is available', () => {
@@ -137,5 +158,36 @@ describe('booking screens', () => {
     );
 
     expect(getByText('Your Alignment Conversation is tomorrow')).toBeTruthy();
+  });
+
+  it('uses startsAt when creating the Google Calendar URL', async () => {
+    mockStoreState = {
+      ...mockStoreState,
+      confirmedBooking: {
+        ...mockStoreState.confirmedBooking,
+        startsAt: '2026-06-20T20:00:00.000Z',
+        slot: {
+          ...mockStoreState.confirmedBooking.slot,
+          date: '2026-06-20',
+          time: '4:00 PM',
+          durationMinutes: 30,
+        },
+      },
+    };
+
+    const { getByText } = render(
+      <BookingConfirmedScreen
+        navigation={{ goBack: jest.fn(), navigate: jest.fn() } as never}
+        route={{ key: 'BookingConfirmed-test', name: 'BookingConfirmed' } as never}
+      />,
+    );
+
+    fireEvent.press(getByText('Add to Google Calendar'));
+
+    await waitFor(() => {
+      expect(Linking.openURL).toHaveBeenCalledWith(
+        expect.stringContaining('dates=20260620T200000Z%2F20260620T203000Z'),
+      );
+    });
   });
 });

@@ -4,6 +4,12 @@ const weekdayFormatter = new Intl.DateTimeFormat('en-US', {
   day: 'numeric',
 });
 
+const longDateFormatter = new Intl.DateTimeFormat('en-US', {
+  weekday: 'long',
+  month: 'long',
+  day: 'numeric',
+});
+
 export const timeTo24Hour = (time: string) => {
   const [clock, meridiem] = time.split(' ');
   const [hoursText, minutesText] = clock.split(':');
@@ -33,7 +39,32 @@ export const addMinutesToTime = (time: string, minutesToAdd: number) => {
   return `${hours12}:${paddedMinutes} ${meridiem}`;
 };
 
-export const formatDateLabel = (date: string) => weekdayFormatter.format(new Date(date));
+function parseSlotDate(date: string) {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    const [year, month, day] = date.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  }
+
+  return new Date(date);
+}
+
+export function formatSlotTime(time: string) {
+  if (time.includes('AM') || time.includes('PM')) {
+    return time;
+  }
+
+  const [hoursText = '0', minutesText = '00'] = time.slice(0, 5).split(':');
+  const hours = Number(hoursText);
+  const minutes = Number(minutesText);
+  const period = hours >= 12 ? 'PM' : 'AM';
+  const displayHour = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
+
+  return `${displayHour}:${minutes.toString().padStart(2, '0')} ${period}`;
+}
+
+export const formatDateLabel = (date: string) => weekdayFormatter.format(parseSlotDate(date));
+
+export const formatSlotDateLong = (date: string) => longDateFormatter.format(parseSlotDate(date));
 
 export const getNextWeekdays = (count: number) => {
   const dates: string[] = [];

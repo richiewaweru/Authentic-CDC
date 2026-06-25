@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { BookingRecord, BookingSelection } from '../../types/booking';
 import { colors, spacing, typography } from '../../theme';
-import { formatDateLabel } from '../../utils/date';
+import { formatDateLabel, formatSlotTime } from '../../utils/date';
 import { Card } from './Card';
 import { GuideCard } from './GuideCard';
 
@@ -25,7 +25,7 @@ export function BookingSummary({ booking, endTime }: BookingSummaryProps) {
       <View style={styles.row}>
         <Text style={styles.label}>Time</Text>
         <Text style={styles.value}>
-          {booking.slot.time}
+          {formatSlotTime(booking.slot.time)}
           {resolvedEndTime ? ` - ${resolvedEndTime}` : ''}
         </Text>
       </View>

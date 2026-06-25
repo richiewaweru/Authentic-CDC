@@ -11,7 +11,7 @@ import { ScreenHeader } from '../../components/ui/ScreenHeader';
 import { BookingStackParamList } from '../../navigation/types';
 import { useAuthStore } from '../../stores/authStore';
 import { colors, spacing, typography } from '../../theme';
-import { formatDateLabel } from '../../utils/date';
+import { formatSlotDateLong, formatSlotTime } from '../../utils/date';
 import { confirmDialog, showErrorDialog } from '../../utils/dialogs';
 
 type Props = NativeStackScreenProps<BookingStackParamList, 'PendingHome'>;
@@ -152,8 +152,8 @@ export function PendingHomeScreen({ navigation }: Props) {
 
         <Card style={styles.bookingCard}>
           <GuideCard guide={booking.guide} />
-          <Text style={styles.bookingDetail}>{formatDateLabel(booking.slot.date)}</Text>
-          <Text style={styles.bookingDetail}>{booking.slot.time}</Text>
+          <Text style={styles.bookingDetail}>{formatSlotDateLong(booking.slot.date)}</Text>
+          <Text style={styles.bookingDetail}>{formatSlotTime(booking.slot.time)}</Text>
           <View style={styles.cardButtons}>
             <Button onPress={() => navigation.navigate('BookingConfirmed')} title="View Details" />
             <Button
