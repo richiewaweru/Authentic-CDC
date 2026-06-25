@@ -27,7 +27,7 @@ export interface BookingRecord extends BookingSelection {
   meetingLink?: string | null;
   startsAt?: string | null;
   endTime: string;
-  status: 'confirmed' | 'cancelled';
+  status: 'confirmed' | 'completed' | 'cancelled';
   cancelledAt?: string;
   cancelReason?: string;
 }

@@ -9,9 +9,10 @@ import { Card } from '../../components/ui/Card';
 import { GuideCard } from '../../components/ui/GuideCard';
 import { ScreenHeader } from '../../components/ui/ScreenHeader';
 import { BookingStackParamList } from '../../navigation/types';
+import { releaseSlot } from '../../services/slotService';
 import { useAuthStore } from '../../stores/authStore';
 import { colors, spacing, typography } from '../../theme';
-import { formatSlotDateLong, formatSlotTime } from '../../utils/date';
+import { formatSlotDate, formatSlotTime } from '../../utils/date';
 import { confirmDialog, showErrorDialog } from '../../utils/dialogs';
 
 type Props = NativeStackScreenProps<BookingStackParamList, 'PendingHome'>;
@@ -27,13 +28,17 @@ const statusSteps = [
 
 export function PendingHomeScreen({ navigation }: Props) {
   const booking = useAuthStore((state) => state.confirmedBooking);
+  const user = useAuthStore((state) => state.user);
   const rescheduleBooking = useAuthStore((state) => state.rescheduleBooking);
+  const clearBooking = useAuthStore((state) => state.clearBooking);
   const signOut = useAuthStore((state) => state.signOut);
   const [rescheduling, setRescheduling] = React.useState(false);
+  const [cancelling, setCancelling] = React.useState(false);
   const startsAt = booking?.startsAt ? new Date(booking.startsAt) : null;
   const hoursUntil = startsAt ? (startsAt.getTime() - Date.now()) / (1000 * 60 * 60) : null;
   const isUrgent = hoursUntil !== null && hoursUntil > 0 && hoursUntil <= 1;
   const isUpcoming = hoursUntil !== null && hoursUntil > 1 && hoursUntil <= 24;
+  const isCompleted = booking?.status === 'completed';
 
   const handleReschedule = async () => {
     const confirmed = await confirmDialog({
@@ -84,6 +89,41 @@ export function PendingHomeScreen({ navigation }: Props) {
     }
   };
 
+  const handleCancelBooking = () => {
+    if (!booking?.slotId) {
+      return;
+    }
+
+    Alert.alert(
+      'Cancel Booking',
+      'Are you sure you want to cancel your Alignment Conversation? Your time slot will be released for others.',
+      [
+        { text: 'Keep Booking', style: 'cancel' },
+        {
+          text: 'Yes, Cancel',
+          style: 'destructive',
+          onPress: () => {
+            setCancelling(true);
+            void (async () => {
+              try {
+                await releaseSlot(booking.slotId!);
+                clearBooking();
+                navigation.navigate('ProfileReady');
+              } catch (error) {
+                Alert.alert(
+                  'Error',
+                  error instanceof Error ? error.message : 'Could not cancel. Try again.',
+                );
+              } finally {
+                setCancelling(false);
+              }
+            })();
+          },
+        },
+      ],
+    );
+  };
+
   if (!booking) {
     return (
       <ScreenLayout
@@ -127,14 +167,21 @@ export function PendingHomeScreen({ navigation }: Props) {
       <View style={styles.content}>
         <View style={styles.copy}>
           <Text style={styles.pendingLabel}>Pending Access</Text>
-          <Text style={styles.headline}>Your Alignment Conversation is Scheduled</Text>
+          <Text style={styles.headline}>
+            {isCompleted
+              ? 'Your Alignment Conversation is Complete'
+              : 'Your Alignment Conversation is Scheduled'}
+          </Text>
           <Text style={styles.subtitle}>
-            Your Confirmation Fee has been received. Your full Community Access will open after
-            your Alignment Conversation and profile review are complete.
+            {isCompleted
+              ? `Thank you for taking the time, ${
+                  user?.displayName?.split(' ')[0] ?? 'friend'
+                }. Your community guide will review your conversation and you will receive access to the Authentic CDC community soon.`
+              : 'Your Confirmation Fee has been received. Your full Community Access will open after your Alignment Conversation and profile review are complete.'}
           </Text>
         </View>
 
-        {isUrgent ? (
+        {!isCompleted && isUrgent ? (
           <View style={styles.urgentBanner}>
             <Ionicons color={colors.goldDark} name="time-outline" size={18} />
             <Text style={styles.bannerText}>
@@ -143,7 +190,7 @@ export function PendingHomeScreen({ navigation }: Props) {
           </View>
         ) : null}
 
-        {isUpcoming && !isUrgent ? (
+        {!isCompleted && isUpcoming && !isUrgent ? (
           <View style={styles.reminderBanner}>
             <Ionicons color={colors.primary} name="calendar-outline" size={18} />
             <Text style={styles.bannerText}>Your Alignment Conversation is tomorrow</Text>
@@ -151,38 +198,58 @@ export function PendingHomeScreen({ navigation }: Props) {
         ) : null}
 
         <Card style={styles.bookingCard}>
-          <GuideCard guide={booking.guide} />
-          <Text style={styles.bookingDetail}>{formatSlotDateLong(booking.slot.date)}</Text>
-          <Text style={styles.bookingDetail}>{formatSlotTime(booking.slot.time)}</Text>
-          <View style={styles.cardButtons}>
-            <Button onPress={() => navigation.navigate('BookingConfirmed')} title="View Details" />
-            <Button
-              loading={rescheduling}
-              onPress={() => void handleReschedule()}
-              title="Change Time"
-              variant="outlined"
-            />
-          </View>
-          {booking.meetingLink ? (
-            <Button
-              onPress={async () => {
-                try {
-                  const supported = await Linking.canOpenURL(booking.meetingLink!);
-                  if (supported) {
-                    await Linking.openURL(booking.meetingLink!);
-                  } else {
-                    Alert.alert('Cannot open link', `Link: ${booking.meetingLink}`);
-                  }
-                } catch {
-                  Alert.alert('Cannot open link', `Link: ${booking.meetingLink}`);
-                }
-              }}
-              title="Join Conversation"
-            />
+          {isCompleted ? (
+            <View style={styles.completedCard}>
+              <Text style={styles.completedHeadline}>Your Alignment Conversation is Complete</Text>
+              <Text style={styles.completedBody}>
+                Thank you for taking the time, {user?.displayName?.split(' ')[0] ?? 'friend'}.
+                {' '}Your community guide will review your conversation and you will receive access
+                to the Authentic CDC community soon.
+              </Text>
+              <Text style={styles.completedNote}>Keep an eye on your email for next steps.</Text>
+            </View>
           ) : (
-            <Text style={styles.meetingLinkPending}>
-              Your guide will share the meeting link before your scheduled time.
-            </Text>
+            <>
+              <GuideCard guide={booking.guide} />
+              <Text style={styles.bookingDetail}>{formatSlotDate(booking.slot.date)}</Text>
+              <Text style={styles.bookingDetail}>{formatSlotTime(booking.slot.time)}</Text>
+              <View style={styles.cardButtons}>
+                <Button onPress={() => navigation.navigate('BookingConfirmed')} title="View Details" />
+                <Button
+                  loading={rescheduling}
+                  onPress={() => void handleReschedule()}
+                  title="Change Time"
+                  variant="outlined"
+                />
+                <Button
+                  loading={cancelling}
+                  onPress={handleCancelBooking}
+                  title="Cancel Booking"
+                  variant="outlined"
+                />
+              </View>
+              {booking.meetingLink ? (
+                <Button
+                  onPress={async () => {
+                    try {
+                      const supported = await Linking.canOpenURL(booking.meetingLink!);
+                      if (supported) {
+                        await Linking.openURL(booking.meetingLink!);
+                      } else {
+                        Alert.alert('Cannot open link', `Link: ${booking.meetingLink}`);
+                      }
+                    } catch {
+                      Alert.alert('Cannot open link', `Link: ${booking.meetingLink}`);
+                    }
+                  }}
+                  title="Join Conversation"
+                />
+              ) : (
+                <Text style={styles.meetingLinkPending}>
+                  Your guide will share the meeting link before your scheduled time.
+                </Text>
+              )}
+            </>
           )}
         </Card>
 
@@ -261,6 +328,28 @@ const styles = StyleSheet.create({
   bookingCard: {
     padding: spacing.lg,
     gap: spacing.md,
+  },
+  completedCard: {
+    gap: spacing.md,
+    padding: spacing.lg,
+    borderRadius: 24,
+    backgroundColor: colors.primaryContainer,
+    alignItems: 'center',
+  },
+  completedHeadline: {
+    ...typography.headlineMd,
+    color: colors.primaryDark,
+    textAlign: 'center',
+  },
+  completedBody: {
+    ...typography.bodyMd,
+    color: colors.onSurface,
+    textAlign: 'center',
+  },
+  completedNote: {
+    ...typography.bodySm,
+    color: colors.onSurfaceVariant,
+    textAlign: 'center',
   },
   urgentBanner: {
     flexDirection: 'row',

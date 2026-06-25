@@ -64,7 +64,9 @@ export function formatSlotTime(time: string) {
 
 export const formatDateLabel = (date: string) => weekdayFormatter.format(parseSlotDate(date));
 
-export const formatSlotDateLong = (date: string) => longDateFormatter.format(parseSlotDate(date));
+export const formatSlotDate = (date: string) => longDateFormatter.format(parseSlotDate(date));
+
+export const formatSlotDateLong = formatSlotDate;
 
 export const getNextWeekdays = (count: number) => {
   const dates: string[] = [];

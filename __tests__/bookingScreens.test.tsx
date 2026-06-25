@@ -63,7 +63,7 @@ describe('booking screens', () => {
     mockRescheduleBooking.mockReset();
     mockSignOut.mockReset();
     jest.spyOn(Linking, 'canOpenURL').mockResolvedValue(true);
-    jest.spyOn(Linking, 'openURL').mockResolvedValue();
+    jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
     mockStoreState = {
       ...mockStoreState,
       confirmedBooking: {

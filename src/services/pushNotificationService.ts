@@ -1,27 +1,14 @@
-import * as ExpoConstants from 'expo-constants';
+import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
 import { supabase } from '../config/supabase';
 
-const Constants =
-  ('default' in ExpoConstants ? ExpoConstants.default : ExpoConstants) ?? ExpoConstants;
-
-function getExecutionEnvironment() {
-  return Constants?.executionEnvironment ?? ExpoConstants.executionEnvironment;
-}
-
-function getAppOwnership() {
-  return Constants?.appOwnership ?? ExpoConstants.appOwnership;
-}
-
 function getProjectId() {
   return (
     Constants?.expoConfig?.extra?.eas?.projectId ??
-    Constants?.easConfig?.projectId ??
-    ExpoConstants.expoConfig?.extra?.eas?.projectId ??
-    ExpoConstants.easConfig?.projectId
+    Constants?.easConfig?.projectId
   );
 }
 
@@ -35,7 +22,7 @@ Notifications.setNotificationHandler({
 });
 
 function isExpoGoLikeEnvironment() {
-  return getExecutionEnvironment() === 'storeClient' || getAppOwnership() === 'expo';
+  return Constants.executionEnvironment === 'storeClient' || Constants.appOwnership === 'expo';
 }
 
 export async function registerForPushNotifications(userId: string): Promise<void> {

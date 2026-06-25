@@ -41,9 +41,9 @@ export async function bookSlot(slotId: string): Promise<BookSlotResult> {
   };
 }
 
-export async function releaseSlot(slotId: string): Promise<void> {
+export async function releaseSlot(slotId: string, reason = 'Member cancelled booking'): Promise<void> {
   if (DATA_SOURCE === 'supabase') {
-    return releaseSlotInSupabase(slotId);
+    return releaseSlotInSupabase(slotId, reason);
   }
 }
 
@@ -126,7 +126,7 @@ export async function fetchConfirmedBookingForCurrentUser(): Promise<BookingReco
       'id, guide_id, slot_id, slot_date, slot_time, duration_minutes, meeting_link, status, cancelled_at, cancel_reason',
     )
     .eq('user_id', user.id)
-    .eq('status', 'confirmed')
+    .in('status', ['confirmed', 'completed'])
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -218,22 +218,23 @@ async function bookSlotInSupabase(slotId: string): Promise<BookSlotResult> {
     throw new Error('That time is no longer available. Please choose another.');
   }
 
-  const { data: existingBooking, error: existingBookingError } = await supabase
+  const { data: activeBooking, error: activeBookingError } = await supabase
     .from('bookings')
     .select('id')
     .eq('user_id', user.id)
-    .eq('slot_id', slotId)
     .eq('status', 'confirmed')
     .limit(1)
     .maybeSingle();
 
-  if (existingBookingError) {
-    console.error('Failed to check for an existing booking:', existingBookingError);
+  if (activeBookingError) {
+    console.error('Failed to check for an active booking:', activeBookingError);
     throw new Error('Could not confirm whether this time is still available.');
   }
 
-  if (existingBooking) {
-    throw new Error('You already booked this time.');
+  if (activeBooking) {
+    throw new Error(
+      'You already have an upcoming conversation booked. Cancel it first to book a different time.',
+    );
   }
 
   const { data: anyBooking, error: anyBookingError } = await supabase
@@ -327,7 +328,7 @@ async function bookSlotInSupabase(slotId: string): Promise<BookSlotResult> {
   };
 }
 
-async function releaseSlotInSupabase(slotId: string): Promise<void> {
+async function releaseSlotInSupabase(slotId: string, reason: string): Promise<void> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -341,7 +342,7 @@ async function releaseSlotInSupabase(slotId: string): Promise<void> {
     .update({
       status: 'cancelled',
       cancelled_at: new Date().toISOString(),
-      cancel_reason: 'Member rescheduled',
+      cancel_reason: reason,
     })
     .eq('slot_id', slotId)
     .eq('user_id', user.id)
@@ -373,6 +374,7 @@ async function releaseSlotInSupabase(slotId: string): Promise<void> {
 
   if (slotReopenError) {
     console.error('Failed to reopen slot after cancellation:', slotReopenError);
+    throw new Error('Could not release that time.');
   }
 }
 

@@ -7,10 +7,11 @@ jest.mock('expo-notifications', () => ({
   AndroidImportance: {
     MAX: 'max',
   },
-  getExpoPushTokenAsync: (...args: unknown[]) => mockGetExpoPushTokenAsync(...args),
-  getPermissionsAsync: (...args: unknown[]) => mockGetPermissionsAsync(...args),
-  requestPermissionsAsync: (...args: unknown[]) => mockRequestPermissionsAsync(...args),
-  setNotificationChannelAsync: (...args: unknown[]) => mockSetNotificationChannelAsync(...args),
+  getExpoPushTokenAsync: (options?: { projectId?: string }) => mockGetExpoPushTokenAsync(options),
+  getPermissionsAsync: () => mockGetPermissionsAsync(),
+  requestPermissionsAsync: () => mockRequestPermissionsAsync(),
+  setNotificationChannelAsync: (channelId: string, config: unknown) =>
+    mockSetNotificationChannelAsync(channelId, config),
   setNotificationHandler: jest.fn(),
 }));
 
@@ -51,12 +52,12 @@ jest.mock('react-native', () => ({
 }));
 
 const mockUpdateEq = jest.fn();
-const mockUpdate = jest.fn(() => ({ eq: mockUpdateEq }));
-const mockFrom = jest.fn(() => ({ update: mockUpdate }));
+const mockUpdate = jest.fn((_values: { expo_push_token: string }) => ({ eq: mockUpdateEq }));
+const mockFrom = jest.fn((_table: string) => ({ update: mockUpdate }));
 
 jest.mock('../src/config/supabase', () => ({
   supabase: {
-    from: (...args: unknown[]) => mockFrom(...args),
+    from: (table: string) => mockFrom(table),
   },
 }));
 

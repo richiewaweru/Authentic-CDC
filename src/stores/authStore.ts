@@ -112,7 +112,7 @@ export const useAuthStore = create<AuthState>()(
         }
 
         if (booking.slotId) {
-          await releaseSlot(booking.slotId);
+          await releaseSlot(booking.slotId, 'Member rescheduled');
         }
 
         set({ confirmedBooking: null, bookingSelection: null });

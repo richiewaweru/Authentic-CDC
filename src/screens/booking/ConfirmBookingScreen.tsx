@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Alert, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { ScreenLayout } from '../../components/layout';
@@ -14,7 +14,7 @@ import { bookSlot } from '../../services/slotService';
 import { useAuthStore } from '../../stores/authStore';
 import { colors, spacing, typography } from '../../theme';
 import { showErrorDialog, showInfoDialog } from '../../utils/dialogs';
-import { addMinutesToTime } from '../../utils/date';
+import { addMinutesToTime, formatSlotDate, formatSlotTime } from '../../utils/date';
 
 type Props = NativeStackScreenProps<BookingStackParamList, 'ConfirmBooking'>;
 
@@ -54,51 +54,68 @@ export function ConfirmBookingScreen({ navigation }: Props) {
       return;
     }
 
-    setLoading(true);
+    const formattedDate = formatSlotDate(selection.slot.date);
+    const formattedTime = formatSlotTime(selection.slot.time);
 
-    try {
-      const { bookingId, meetingLink, startsAt } = await bookSlot(selection.slot.id);
+    Alert.alert(
+      'Confirm Booking',
+      `Book your Alignment Conversation with ${selection.guide.name} on ${formattedDate} at ${formattedTime}?`,
+      [
+        { text: 'Go Back', style: 'cancel' },
+        {
+          text: 'Confirm',
+          onPress: () => {
+            setLoading(true);
+            void (async () => {
+              try {
+                const { bookingId, meetingLink, startsAt } = await bookSlot(selection.slot.id);
 
-      confirmBooking({
-        ...selection,
-        bookingId,
-        slotId: selection.slot.id,
-        meetingLink,
-        startsAt,
-        endTime: addMinutesToTime(selection.slot.time, selection.slot.durationMinutes),
-        status: 'confirmed',
-      });
+                confirmBooking({
+                  ...selection,
+                  bookingId,
+                  slotId: selection.slot.id,
+                  meetingLink,
+                  startsAt,
+                  endTime: addMinutesToTime(selection.slot.time, selection.slot.durationMinutes),
+                  status: 'confirmed',
+                });
 
-      const fireConfirmationEmail = async () => {
-        try {
-          await supabase.functions.invoke('send-booking-confirmation', {
-            body: {
-              bookingId,
-              userEmail: user?.email ?? '',
-              userFirstName: user?.displayName?.split(' ')[0] ?? user?.email?.split('@')[0] ?? 'there',
-              guideName: selection.guide.name,
-              guideTitle: selection.guide.title || 'Community Guide',
-              slotDate: formatDateForEmail(selection.slot.date),
-              slotTime: formatTimeForEmail(selection.slot.time),
-              durationMinutes: selection.slot.durationMinutes,
-            },
-          });
-        } catch (error) {
-          console.warn('[Email] Booking confirmation failed:', error);
-        }
-      };
-      void fireConfirmationEmail();
+                const fireConfirmationEmail = async () => {
+                  try {
+                    await supabase.functions.invoke('send-booking-confirmation', {
+                      body: {
+                        bookingId,
+                        userEmail: user?.email ?? '',
+                        userFirstName:
+                          user?.displayName?.split(' ')[0] ?? user?.email?.split('@')[0] ?? 'there',
+                        guideName: selection.guide.name,
+                        guideTitle: selection.guide.title || 'Community Guide',
+                        slotDate: formatDateForEmail(selection.slot.date),
+                        slotTime: formatTimeForEmail(selection.slot.time),
+                        durationMinutes: selection.slot.durationMinutes,
+                      },
+                    });
+                  } catch (error) {
+                    console.warn('[Email] Booking confirmation failed:', error);
+                  }
+                };
+                void fireConfirmationEmail();
 
-      navigation.navigate('BookingConfirmed');
-    } catch (error) {
-      console.error('Booking confirmation failed:', error);
-      showErrorDialog(
-        'Could not confirm your booking',
-        error instanceof Error ? error.message : 'Please try again.',
-      );
-    } finally {
-      setLoading(false);
-    }
+                navigation.navigate('BookingConfirmed');
+              } catch (error) {
+                console.error('Booking confirmation failed:', error);
+                showErrorDialog(
+                  'Could not confirm your booking',
+                  error instanceof Error ? error.message : 'Please try again.',
+                );
+              } finally {
+                setLoading(false);
+              }
+            })();
+          },
+        },
+      ],
+    );
   };
 
   if (!selection) {
