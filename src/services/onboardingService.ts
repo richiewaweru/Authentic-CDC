@@ -1,8 +1,10 @@
 import type { PostgrestError } from '@supabase/supabase-js';
 
+import { getSlotDataSource } from '../config/env';
 import { supabase } from '../config/supabase';
 import type { OnboardingData } from '../types/onboarding';
 import type { ProfileStatus, UserState } from '../types/auth';
+const EMAIL_TRIGGERS_ENABLED = getSlotDataSource() === 'supabase';
 
 const relationshipGoalMap: Record<string, string> = {
   'Friendship first': 'friendship_first',
@@ -79,7 +81,10 @@ function isMissingProfileError(error: PostgrestError | null) {
   return error?.code === 'PGRST116';
 }
 
-function mapProfileStatusRow(row: { onboarding_complete: boolean; user_state: UserState }): ProfileStatus {
+function mapProfileStatusRow(row: {
+  onboarding_complete: boolean;
+  user_state: UserState | null;
+}): ProfileStatus {
   return {
     onboardingComplete: row.onboarding_complete,
     userState: row.user_state,
@@ -223,8 +228,38 @@ export const onboardingService = {
       throw new Error('We could not finish setting up your profile. Please try again.');
     }
 
+    const fireOnboardingEmail = async () => {
+      if (!EMAIL_TRIGGERS_ENABLED) {
+        return;
+      }
+
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (!user?.email) {
+          return;
+        }
+
+        await supabase.functions.invoke('send-member-email', {
+          body: {
+            type: 'onboarding_complete',
+            userEmail: user.email,
+            firstName: data.firstName?.trim() || user.email.split('@')[0],
+            memberEmail: user.email,
+            memberCity: data.cityState || 'Not specified',
+          },
+        });
+      } catch (error) {
+        console.warn('[Email] Onboarding complete email failed:', error);
+      }
+    };
+
+    void fireOnboardingEmail();
+
     return mapProfileStatusRow(
-      profileData as { onboarding_complete: boolean; user_state: UserState },
+      profileData as { onboarding_complete: boolean; user_state: UserState | null },
     );
   },
 };

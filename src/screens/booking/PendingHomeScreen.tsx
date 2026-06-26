@@ -29,16 +29,21 @@ const statusSteps = [
 export function PendingHomeScreen({ navigation }: Props) {
   const booking = useAuthStore((state) => state.confirmedBooking);
   const user = useAuthStore((state) => state.user);
+  const userState = useAuthStore((state) => state.userState);
   const rescheduleBooking = useAuthStore((state) => state.rescheduleBooking);
   const clearBooking = useAuthStore((state) => state.clearBooking);
   const signOut = useAuthStore((state) => state.signOut);
   const [rescheduling, setRescheduling] = React.useState(false);
   const [cancelling, setCancelling] = React.useState(false);
+  const firstName = user?.displayName?.split(' ')[0] ?? 'friend';
   const startsAt = booking?.startsAt ? new Date(booking.startsAt) : null;
   const hoursUntil = startsAt ? (startsAt.getTime() - Date.now()) / (1000 * 60 * 60) : null;
   const isUrgent = hoursUntil !== null && hoursUntil > 0 && hoursUntil <= 1;
   const isUpcoming = hoursUntil !== null && hoursUntil > 1 && hoursUntil <= 24;
-  const isCompleted = booking?.status === 'completed';
+  const isCompleted =
+    userState === 'conversation_complete' ||
+    userState === 'conversation_approved' ||
+    booking?.status === 'completed';
 
   const handleReschedule = async () => {
     const confirmed = await confirmDialog({
@@ -125,6 +130,48 @@ export function PendingHomeScreen({ navigation }: Props) {
   };
 
   if (!booking) {
+    if (isCompleted) {
+      return (
+        <ScreenLayout
+          footer={
+            <TouchableOpacity
+              accessibilityLabel="Sign out"
+              accessibilityRole="button"
+              onPress={() => void handleSignOut()}
+              style={styles.signOutButton}
+            >
+              <Text style={styles.signOutText}>Sign Out</Text>
+            </TouchableOpacity>
+          }
+          header={<ScreenHeader onBack={() => navigation.goBack()} />}
+        >
+          <View style={styles.content}>
+            <View style={styles.copy}>
+              <Text style={styles.pendingLabel}>Pending Access</Text>
+              <Text style={styles.headline}>Your Alignment Conversation is Complete</Text>
+              <Text style={styles.subtitle}>
+                Thank you for taking the time, {firstName}. Your community guide is reviewing your
+                conversation. You will receive community access soon.
+              </Text>
+            </View>
+            <Card style={styles.bookingCard}>
+              <View style={styles.completedCard}>
+                <View style={styles.completedBadge}>
+                  <Text style={styles.completedBadgeText}>COMPLETE</Text>
+                </View>
+                <Text style={styles.completedHeadline}>Your Alignment Conversation is Complete</Text>
+                <Text style={styles.completedBody}>
+                  Thank you for taking the time, {firstName}. Your community guide is reviewing
+                  your conversation. You will receive community access soon — keep an eye on your
+                  email for next steps.
+                </Text>
+              </View>
+            </Card>
+          </View>
+        </ScreenLayout>
+      );
+    }
+
     return (
       <ScreenLayout
         footer={
@@ -174,9 +221,7 @@ export function PendingHomeScreen({ navigation }: Props) {
           </Text>
           <Text style={styles.subtitle}>
             {isCompleted
-              ? `Thank you for taking the time, ${
-                  user?.displayName?.split(' ')[0] ?? 'friend'
-                }. Your community guide will review your conversation and you will receive access to the Authentic CDC community soon.`
+              ? `Thank you for taking the time, ${firstName}. Your community guide is reviewing your conversation. You will receive community access soon.`
               : 'Your Confirmation Fee has been received. Your full Community Access will open after your Alignment Conversation and profile review are complete.'}
           </Text>
         </View>
@@ -200,13 +245,15 @@ export function PendingHomeScreen({ navigation }: Props) {
         <Card style={styles.bookingCard}>
           {isCompleted ? (
             <View style={styles.completedCard}>
+              <View style={styles.completedBadge}>
+                <Text style={styles.completedBadgeText}>COMPLETE</Text>
+              </View>
               <Text style={styles.completedHeadline}>Your Alignment Conversation is Complete</Text>
               <Text style={styles.completedBody}>
-                Thank you for taking the time, {user?.displayName?.split(' ')[0] ?? 'friend'}.
-                {' '}Your community guide will review your conversation and you will receive access
-                to the Authentic CDC community soon.
+                Thank you for taking the time, {firstName}. Your community guide is reviewing your
+                conversation. You will receive community access soon — keep an eye on your email
+                for next steps.
               </Text>
-              <Text style={styles.completedNote}>Keep an eye on your email for next steps.</Text>
             </View>
           ) : (
             <>
@@ -336,6 +383,18 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primaryContainer,
     alignItems: 'center',
   },
+  completedBadge: {
+    backgroundColor: colors.successTint,
+    borderRadius: 999,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+  },
+  completedBadgeText: {
+    ...typography.labelSm,
+    color: colors.primaryDark,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+  },
   completedHeadline: {
     ...typography.headlineMd,
     color: colors.primaryDark,
@@ -344,11 +403,6 @@ const styles = StyleSheet.create({
   completedBody: {
     ...typography.bodyMd,
     color: colors.onSurface,
-    textAlign: 'center',
-  },
-  completedNote: {
-    ...typography.bodySm,
-    color: colors.onSurfaceVariant,
     textAlign: 'center',
   },
   urgentBanner: {

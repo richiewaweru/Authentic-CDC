@@ -4,7 +4,7 @@ import * as WebBrowser from 'expo-web-browser';
 import type { AuthChangeEvent, Provider, Session, User } from '@supabase/supabase-js';
 
 import { supabase } from '../config/supabase';
-import { getAppScheme } from '../config/env';
+import { getAppScheme, getSlotDataSource } from '../config/env';
 import type { AuthUser, EmailAuthResult } from '../types/auth';
 import { buildDisplayNameFromEmail, parseAuthCallbackUrl } from './authUtils';
 import { signInWithNativeGoogle } from './nativeGoogleAuth';
@@ -13,6 +13,64 @@ WebBrowser.maybeCompleteAuthSession();
 
 type SupportedProvider = 'google' | 'apple';
 type AuthChangeHandler = (event: AuthChangeEvent, session: Session | null) => void;
+const EMAIL_TRIGGERS_ENABLED = getSlotDataSource() === 'supabase';
+
+function buildEmailFirstName(email: string) {
+  return email.split('@')[0] || 'there';
+}
+
+async function fireWelcomeEmail(email: string) {
+  if (!EMAIL_TRIGGERS_ENABLED || !email) {
+    return;
+  }
+
+  try {
+    await supabase.functions.invoke('send-member-email', {
+      body: {
+        type: 'welcome',
+        userEmail: email,
+        firstName: buildEmailFirstName(email),
+      },
+    });
+  } catch (error) {
+    console.warn('[Email] Welcome email failed:', error);
+  }
+}
+
+async function maybeSendWelcomeEmailForOAuthSession(session: Session | null, provider: SupportedProvider) {
+  if (!session?.user?.email || provider !== 'google') {
+    return;
+  }
+
+  try {
+    const createdAt = session.user.created_at ? new Date(session.user.created_at).getTime() : null;
+    const lastSignInAt = session.user.last_sign_in_at
+      ? new Date(session.user.last_sign_in_at).getTime()
+      : null;
+    const firstSignIn =
+      createdAt !== null &&
+      lastSignInAt !== null &&
+      Math.abs(lastSignInAt - createdAt) < 60 * 1000;
+
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('onboarding_complete')
+      .eq('id', session.user.id)
+      .single();
+
+    if (error) {
+      return;
+    }
+
+    if (!firstSignIn || profile?.onboarding_complete) {
+      return;
+    }
+
+    await fireWelcomeEmail(session.user.email);
+  } catch (error) {
+    console.warn('[Auth] Could not determine whether to send the welcome email:', error);
+  }
+}
 
 export function mapSupabaseUser(user: User | null): AuthUser | null {
   if (!user) {
@@ -71,6 +129,7 @@ async function consumePendingWebAuthSession() {
       throw error;
     }
 
+    void maybeSendWelcomeEmailForOAuthSession(data.session, 'google');
     return data.session;
   }
 
@@ -86,6 +145,7 @@ async function consumePendingWebAuthSession() {
       throw error;
     }
 
+    void maybeSendWelcomeEmailForOAuthSession(data.session, 'google');
     return data.session;
   }
 
@@ -151,6 +211,7 @@ async function completeOAuthSession(provider: SupportedProvider) {
       throw exchangeError;
     }
 
+    void maybeSendWelcomeEmailForOAuthSession(sessionData.session, provider);
     return sessionData.session;
   }
 
@@ -164,10 +225,12 @@ async function completeOAuthSession(provider: SupportedProvider) {
       throw setSessionError;
     }
 
+    void maybeSendWelcomeEmailForOAuthSession(sessionData.session, provider);
     return sessionData.session;
   }
 
   const { data: sessionResult } = await supabase.auth.getSession();
+  void maybeSendWelcomeEmailForOAuthSession(sessionResult.session, provider);
   return sessionResult.session;
 }
 
@@ -189,6 +252,10 @@ export const authService = {
 
     if (error) {
       throw error;
+    }
+
+    if (data.user?.email) {
+      void fireWelcomeEmail(data.user.email);
     }
 
     return {

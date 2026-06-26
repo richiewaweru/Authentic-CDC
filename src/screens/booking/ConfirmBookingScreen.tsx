@@ -9,14 +9,16 @@ import { Card } from '../../components/ui/Card';
 import { ScreenHeader } from '../../components/ui/ScreenHeader';
 import { CONFIRMATION_FEE } from '../../constants/fees';
 import { BookingStackParamList } from '../../navigation/types';
+import { getSlotDataSource } from '../../config/env';
 import { supabase } from '../../config/supabase';
 import { bookSlot } from '../../services/slotService';
 import { useAuthStore } from '../../stores/authStore';
 import { colors, spacing, typography } from '../../theme';
 import { showErrorDialog, showInfoDialog } from '../../utils/dialogs';
-import { addMinutesToTime, formatSlotDate, formatSlotTime } from '../../utils/date';
+import { addMinutesToTime, formatSlotDate, formatSlotTime, timeTo24Hour } from '../../utils/date';
 
 type Props = NativeStackScreenProps<BookingStackParamList, 'ConfirmBooking'>;
+const EMAIL_TRIGGERS_ENABLED = getSlotDataSource() === 'supabase';
 
 function formatDateForEmail(slotDate: string): string {
   const [year, month, day] = slotDate.split('-').map(Number);
@@ -36,6 +38,29 @@ function formatTimeForEmail(slotTime: string): string {
   const period = hour >= 12 ? 'PM' : 'AM';
   const hours12 = hour % 12 || 12;
   return `${hours12}:${String(minute).padStart(2, '0')} ${period}`;
+}
+
+function buildGoogleCalendarUrl(params: {
+  guideName: string;
+  slotDate: string;
+  slotTime: string;
+  durationMinutes: number;
+}): string {
+  const [year, month, day] = params.slotDate.split('-').map(Number);
+  const { hours, minutes } = timeTo24Hour(formatSlotTime(params.slotTime));
+  const start = new Date(year, month - 1, day, hours, minutes);
+  const end = new Date(start.getTime() + params.durationMinutes * 60 * 1000);
+  const fmt = (date: Date) => date.toISOString().replace(/[-:.]/g, '').slice(0, 15) + 'Z';
+
+  const qs = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: `Alignment Conversation with ${params.guideName}`,
+    dates: `${fmt(start)}/${fmt(end)}`,
+    details: 'Your Authentic CDC Alignment Conversation.',
+    location: 'Virtual',
+  });
+
+  return `https://calendar.google.com/calendar/render?${qs.toString()}`;
 }
 
 export function ConfirmBookingScreen({ navigation }: Props) {
@@ -81,6 +106,10 @@ export function ConfirmBookingScreen({ navigation }: Props) {
                 });
 
                 const fireConfirmationEmail = async () => {
+                  if (!EMAIL_TRIGGERS_ENABLED) {
+                    return;
+                  }
+
                   try {
                     await supabase.functions.invoke('send-booking-confirmation', {
                       body: {
@@ -92,7 +121,13 @@ export function ConfirmBookingScreen({ navigation }: Props) {
                         guideTitle: selection.guide.title || 'Community Guide',
                         slotDate: formatDateForEmail(selection.slot.date),
                         slotTime: formatTimeForEmail(selection.slot.time),
-                        durationMinutes: selection.slot.durationMinutes,
+                        durationMinutes: selection.slot.durationMinutes ?? 30,
+                        calendarUrl: buildGoogleCalendarUrl({
+                          guideName: selection.guide.name,
+                          slotDate: selection.slot.date,
+                          slotTime: selection.slot.time,
+                          durationMinutes: selection.slot.durationMinutes ?? 30,
+                        }),
                       },
                     });
                   } catch (error) {

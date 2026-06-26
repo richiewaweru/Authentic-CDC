@@ -1,7 +1,17 @@
 jest.mock('../src/config/supabase', () => ({
   supabase: {
     from: jest.fn(),
+    auth: {
+      getUser: jest.fn(),
+    },
+    functions: {
+      invoke: jest.fn(),
+    },
   },
+}));
+
+jest.mock('../src/config/env', () => ({
+  getSlotDataSource: jest.fn(() => 'supabase'),
 }));
 
 import { supabase } from '../src/config/supabase';
@@ -50,15 +60,28 @@ const sampleOnboardingData: OnboardingData = {
 
 describe('onboarding service', () => {
   const fromMock = supabase.from as jest.Mock;
+  const getUserMock = supabase.auth.getUser as jest.Mock;
+  const invokeMock = supabase.functions.invoke as jest.Mock;
   let consoleErrorSpy: jest.SpyInstance;
+  let consoleWarnSpy: jest.SpyInstance;
 
   beforeEach(() => {
     consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
     jest.clearAllMocks();
+    getUserMock.mockResolvedValue({
+      data: {
+        user: {
+          email: 'ada@example.com',
+        },
+      },
+    });
+    invokeMock.mockResolvedValue({ data: null, error: null });
   });
 
   afterEach(() => {
     consoleErrorSpy.mockRestore();
+    consoleWarnSpy.mockRestore();
   });
 
   it('maps onboarding responses to canonical backend values', () => {
@@ -158,6 +181,16 @@ describe('onboarding service', () => {
     expect(result).toEqual({
       onboardingComplete: true,
       userState: 'onboarding_complete',
+    });
+    await Promise.resolve();
+    expect(invokeMock).toHaveBeenCalledWith('send-member-email', {
+      body: {
+        type: 'onboarding_complete',
+        userEmail: 'ada@example.com',
+        firstName: 'Ada',
+        memberEmail: 'ada@example.com',
+        memberCity: 'Atlanta, GA',
+      },
     });
   });
 

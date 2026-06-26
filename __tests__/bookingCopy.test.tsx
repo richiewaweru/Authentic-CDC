@@ -28,6 +28,10 @@ jest.mock('expo-linear-gradient', () => {
 });
 
 const mockStoreState = {
+  user: {
+    email: 'ada@example.com',
+    displayName: 'Ada Member',
+  },
   bookingSelection: null as any,
   confirmedBooking: null as any,
   confirmBooking: jest.fn(),
@@ -47,21 +51,39 @@ jest.mock('../src/services/slotService', () => ({
   releaseSlot: jest.fn(),
 }));
 
-import React from 'react';
-import { fireEvent, render } from '@testing-library/react-native';
+jest.mock('../src/config/env', () => ({
+  getSlotDataSource: jest.fn(() => 'supabase'),
+}));
 
+jest.mock('../src/config/supabase', () => ({
+  supabase: {
+    functions: {
+      invoke: jest.fn(),
+    },
+  },
+}));
+
+import React from 'react';
+import { fireEvent, render, waitFor } from '@testing-library/react-native';
+
+import { supabase } from '../src/config/supabase';
 import { mockGuides } from '../src/mocks/guides';
 import { mockSlots } from '../src/mocks/slots';
+import { bookSlot } from '../src/services/slotService';
 import { ConfirmBookingScreen } from '../src/screens/booking/ConfirmBookingScreen';
 import { PendingHomeScreen } from '../src/screens/booking/PendingHomeScreen';
 import { ProfileReadyScreen } from '../src/screens/booking/ProfileReadyScreen';
 
 describe('booking copy updates', () => {
+  const mockInvoke = supabase.functions.invoke as jest.Mock;
+  const mockBookSlot = bookSlot as jest.Mock;
   let consoleErrorSpy: jest.SpyInstance;
+  let consoleWarnSpy: jest.SpyInstance;
   let alertSpy: jest.SpyInstance;
 
   beforeEach(() => {
     consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
     alertSpy = jest.spyOn(require('react-native').Alert, 'alert').mockImplementation(jest.fn());
     mockStoreState.bookingSelection = null;
     mockStoreState.confirmedBooking = null;
@@ -69,10 +91,17 @@ describe('booking copy updates', () => {
     mockStoreState.rescheduleBooking.mockReset();
     mockStoreState.setBookingSelection.mockReset();
     mockStoreState.signOut.mockReset();
+    mockInvoke.mockReset().mockResolvedValue({ data: null, error: null });
+    mockBookSlot.mockReset().mockResolvedValue({
+      bookingId: 'booking-1',
+      meetingLink: null,
+      startsAt: '2026-06-20T14:00:00.000Z',
+    });
   });
 
   afterEach(() => {
     consoleErrorSpy.mockRestore();
+    consoleWarnSpy.mockRestore();
     alertSpy.mockRestore();
   });
 
@@ -170,5 +199,48 @@ describe('booking copy updates', () => {
     await signOutButtons?.[1]?.onPress?.();
 
     expect(mockStoreState.signOut).toHaveBeenCalledTimes(1);
+  });
+
+  it('fires the booking confirmation email with calendarUrl after a confirmed booking', async () => {
+    mockStoreState.bookingSelection = {
+      guide: mockGuides[0],
+      slot: {
+        ...mockSlots[0],
+        date: '2026-06-20',
+        time: '10:00 AM',
+        durationMinutes: 30,
+      },
+    };
+
+    render(
+      <ConfirmBookingScreen
+        navigation={{ goBack: jest.fn(), navigate: jest.fn() } as never}
+        route={{ key: 'ConfirmBooking-test', name: 'ConfirmBooking' } as never}
+      />,
+    );
+
+    fireEvent.press(require('@testing-library/react-native').screen.getByText('Confirm Booking'));
+
+    const confirmButtons = alertSpy.mock.calls[0]?.[2];
+    await confirmButtons?.[1]?.onPress?.();
+
+    await waitFor(() => {
+      expect(mockInvoke).toHaveBeenCalledWith(
+        'send-booking-confirmation',
+        expect.objectContaining({
+          body: expect.objectContaining({
+            bookingId: 'booking-1',
+            userEmail: 'ada@example.com',
+            userFirstName: 'Ada',
+            guideName: mockGuides[0].name,
+            guideTitle: mockGuides[0].title,
+            slotDate: 'Saturday, June 20',
+            slotTime: '10:00 AM',
+            durationMinutes: 30,
+            calendarUrl: expect.stringContaining('calendar.google.com/calendar/render?'),
+          }),
+        }),
+      );
+    });
   });
 });

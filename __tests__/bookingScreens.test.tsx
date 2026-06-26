@@ -26,13 +26,17 @@ import { PendingHomeScreen } from '../src/screens/booking/PendingHomeScreen';
 const mockRescheduleBooking = jest.fn();
 const mockSignOut = jest.fn();
 let mockStoreState = {
+  user: {
+    displayName: 'Ada Member',
+  },
+  userState: null as string | null,
   confirmedBooking: {
     bookingId: 'booking-1',
     slotId: 'slot-1',
     meetingLink: null as string | null,
     startsAt: null as string | null,
     endTime: '9:30 AM',
-    status: 'confirmed' as const,
+    status: 'confirmed' as 'confirmed' | 'completed',
     guide: {
       id: 'guide-1',
       name: 'Ada Love',
@@ -76,6 +80,7 @@ describe('booking screens', () => {
           time: '9:00 AM',
         },
       },
+      userState: null,
     };
   });
 
@@ -158,6 +163,34 @@ describe('booking screens', () => {
     );
 
     expect(getByText('Your Alignment Conversation is tomorrow')).toBeTruthy();
+  });
+
+  it('shows the completed variant and hides action buttons when the conversation is complete', () => {
+    mockStoreState = {
+      ...mockStoreState,
+      userState: 'conversation_complete',
+      confirmedBooking: {
+        ...mockStoreState.confirmedBooking,
+        status: 'completed',
+        meetingLink: 'https://meet.example.com/abc',
+      },
+    };
+
+    const { getAllByText, getByText, queryByText } = render(
+      <PendingHomeScreen
+        navigation={{ goBack: jest.fn(), navigate: jest.fn() } as never}
+        route={{ key: 'PendingHome-test', name: 'PendingHome' } as never}
+      />,
+    );
+
+    expect(getAllByText('Your Alignment Conversation is Complete').length).toBeGreaterThan(0);
+    expect(
+      getAllByText(/Thank you for taking the time, Ada\. Your community guide is reviewing/i)
+        .length,
+    ).toBeGreaterThan(0);
+    expect(queryByText('Join Conversation')).toBeNull();
+    expect(queryByText('Change Time')).toBeNull();
+    expect(queryByText('Cancel Booking')).toBeNull();
   });
 
   it('uses startsAt when creating the Google Calendar URL', async () => {

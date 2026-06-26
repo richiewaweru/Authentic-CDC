@@ -14,4 +14,5 @@ export type BookingStackParamList = {
   ConfirmBooking: undefined;
   BookingConfirmed: undefined;
   PendingHome: undefined;
+  CommunityHome: undefined;
 };

@@ -1,8 +1,15 @@
+jest.spyOn(console, 'warn').mockImplementation(() => {});
+
 const mockMaybeCompleteAuthSession = jest.fn();
 const mockOpenAuthSessionAsync = jest.fn();
 const mockSignInWithOAuth = jest.fn();
 const mockSetSession = jest.fn();
 const mockSignInWithNativeGoogle = jest.fn();
+const mockMaybeSingle = jest.fn();
+const mockEq = jest.fn(() => ({ maybeSingle: mockMaybeSingle }));
+const mockSelect = jest.fn(() => ({ eq: mockEq }));
+const mockFrom = jest.fn((_table: string) => ({ select: mockSelect }));
+const mockInvoke = jest.fn();
 
 function loadAuthServiceForPlatform(platform: 'android' | 'ios' | 'web') {
   jest.resetModules();
@@ -34,11 +41,16 @@ function loadAuthServiceForPlatform(platform: 'android' | 'ios' | 'web') {
         signOut: jest.fn(),
         signUp: jest.fn(),
       },
+      from: (table: string) => mockFrom(table),
+      functions: {
+        invoke: (name: string, payload: unknown) => mockInvoke(name, payload),
+      },
     },
   }));
 
   jest.doMock('../src/config/env', () => ({
     getAppScheme: jest.fn(() => 'authenticcdc'),
+    getSlotDataSource: jest.fn(() => 'supabase'),
   }));
 
   jest.doMock('../src/services/authUtils', () => ({
@@ -63,6 +75,16 @@ describe('authService signInWithGoogle', () => {
     mockSignInWithOAuth.mockReset();
     mockSetSession.mockReset();
     mockSignInWithNativeGoogle.mockReset();
+    mockMaybeSingle.mockReset().mockResolvedValue({
+      data: {
+        onboarding_complete: true,
+      },
+      error: null,
+    });
+    mockEq.mockClear();
+    mockSelect.mockClear();
+    mockFrom.mockClear();
+    mockInvoke.mockClear();
   });
 
   it('uses native Google sign-in on Android', async () => {

@@ -57,7 +57,7 @@ describe('useAuthStore', () => {
 
     await useAuthStore.getState().rescheduleBooking();
 
-    expect(mockedReleaseSlot).toHaveBeenCalledWith(slot.id);
+    expect(mockedReleaseSlot).toHaveBeenCalledWith(slot.id, 'Member rescheduled');
     expect(useAuthStore.getState().bookingSelection).toBeNull();
     expect(useAuthStore.getState().confirmedBooking).toBeNull();
   });

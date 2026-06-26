@@ -4,8 +4,11 @@ export type UserState =
   | 'authenticated'
   | 'onboarding_incomplete'
   | 'onboarding_complete'
+  | 'booking_confirmed'
   | 'conversation_scheduled'
+  | 'conversation_complete'
   | 'conversation_approved'
+  | 'community_active'
   | 'membership_active'
   | 'bylaws_accepted'
   | 'full_member';
@@ -19,7 +22,7 @@ export interface AuthUser {
 
 export interface ProfileStatus {
   onboardingComplete: boolean;
-  userState: UserState;
+  userState: UserState | null;
 }
 
 export interface EmailAuthResult {
