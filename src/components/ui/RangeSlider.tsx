@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useRef } from 'react';
-import { PanResponder, StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
+import { PanResponder, Platform, StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
 
 import { colors, spacing, typography } from '../../theme';
 
@@ -132,60 +132,102 @@ export function RangeSlider({ label, min, max, value, onChange, unit }: RangeSli
           {suffix}
         </Text>
       </View>
+      {Platform.OS === 'web' ? (
+        <View style={styles.webSliderRow}>
+          <Text style={styles.rangeLabel}>
+            {min}
+            {suffix}
+          </Text>
+          <input
+            type="range"
+            min={min}
+            max={max}
+            onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+              const next = Number(event.target.value);
 
-      <View
-        accessibilityLabel={`${label} range slider`}
-        onLayout={onLayout}
-        style={styles.sliderContainer}
-      >
-        <View style={styles.track} />
-        <View
-          style={[
-            styles.activeTrack,
-            {
-              left: `${lowPercent}%`,
-              width: `${highPercent - lowPercent}%`,
-            },
-          ]}
-        />
-        <View
-          accessibilityActions={thumbActions}
-          accessibilityLabel={`${label} minimum thumb`}
-          accessibilityRole="adjustable"
-          onAccessibilityAction={(event) =>
-            handleLowAccessibilityAction(event.nativeEvent.actionName)
-          }
-          style={[styles.thumb, { left: `${lowPercent}%` }]}
-          testID={`${label}-minimum-thumb`}
-          {...lowResponder.panHandlers}
-        >
-          <View style={styles.thumbInner} />
-        </View>
-        <View
-          accessibilityActions={thumbActions}
-          accessibilityLabel={`${label} maximum thumb`}
-          accessibilityRole="adjustable"
-          onAccessibilityAction={(event) =>
-            handleHighAccessibilityAction(event.nativeEvent.actionName)
-          }
-          style={[styles.thumb, { left: `${highPercent}%` }]}
-          testID={`${label}-maximum-thumb`}
-          {...highResponder.panHandlers}
-        >
-          <View style={styles.thumbInner} />
-        </View>
-      </View>
+              if (next < high) {
+                onChange([next, high]);
+              }
+            }}
+            style={{ flex: 1 }}
+            value={low}
+          />
+          <input
+            type="range"
+            min={min}
+            max={max}
+            onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+              const next = Number(event.target.value);
 
-      <View style={styles.rangeLabels}>
-        <Text style={styles.rangeLabel}>
-          {min}
-          {suffix}
-        </Text>
-        <Text style={styles.rangeLabel}>
-          {max}
-          {suffix}
-        </Text>
-      </View>
+              if (next > low) {
+                onChange([low, next]);
+              }
+            }}
+            style={{ flex: 1 }}
+            value={high}
+          />
+          <Text style={styles.rangeLabel}>
+            {max}
+            {suffix}
+          </Text>
+        </View>
+      ) : (
+        <>
+          <View
+            accessibilityLabel={`${label} range slider`}
+            onLayout={onLayout}
+            style={styles.sliderContainer}
+          >
+            <View style={styles.track} />
+            <View
+              style={[
+                styles.activeTrack,
+                {
+                  left: `${lowPercent}%`,
+                  width: `${highPercent - lowPercent}%`,
+                },
+              ]}
+            />
+            <View
+              accessibilityActions={thumbActions}
+              accessibilityLabel={`${label} minimum thumb`}
+              accessibilityRole="adjustable"
+              onAccessibilityAction={(event) =>
+                handleLowAccessibilityAction(event.nativeEvent.actionName)
+              }
+              style={[styles.thumb, { left: `${lowPercent}%` }]}
+              testID={`${label}-minimum-thumb`}
+              {...lowResponder.panHandlers}
+            >
+              <View style={styles.thumbInner} />
+            </View>
+            <View
+              accessibilityActions={thumbActions}
+              accessibilityLabel={`${label} maximum thumb`}
+              accessibilityRole="adjustable"
+              onAccessibilityAction={(event) =>
+                handleHighAccessibilityAction(event.nativeEvent.actionName)
+              }
+              style={[styles.thumb, { left: `${highPercent}%` }]}
+              testID={`${label}-maximum-thumb`}
+              {...highResponder.panHandlers}
+            >
+              <View style={styles.thumbInner} />
+            </View>
+          </View>
+
+          <View style={styles.rangeLabels}>
+            <Text style={styles.rangeLabel}>
+              {min}
+              {suffix}
+            </Text>
+            <Text style={styles.rangeLabel}>
+              {max}
+              {suffix}
+            </Text>
+          </View>
+        </>
+      )}
     </View>
   );
 }
@@ -253,6 +295,12 @@ const styles = StyleSheet.create({
   rangeLabels: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+  },
+  webSliderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 8,
   },
   rangeLabel: {
     ...typography.labelSm,
