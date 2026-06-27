@@ -1,5 +1,6 @@
-import React, { useCallback, useMemo, useRef } from 'react';
-import { PanResponder, Platform, StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Platform, StyleSheet, Text, View } from 'react-native';
+import { Slider } from '@miblanchard/react-native-slider';
 
 import { colors, spacing, typography } from '../../theme';
 
@@ -12,114 +13,62 @@ interface RangeSliderProps {
   unit?: string;
 }
 
-const THUMB_SIZE = 24;
+const THUMB_SIZE = 28;
 const TRACK_HEIGHT = 4;
-const ACTIVE_TRACK_HEIGHT = 4;
 
 export function RangeSlider({ label, min, max, value, onChange, unit }: RangeSliderProps) {
-  const [low, high] = value;
   const suffix = unit ? ` ${unit}` : '';
-  const trackWidth = useRef(0);
-  const lowRef = useRef(low);
-  const highRef = useRef(high);
-  const lowStartX = useRef(0);
-  const highStartX = useRef(0);
+  const [localValue, setLocalValue] = useState<[number, number]>(value);
 
-  lowRef.current = low;
-  highRef.current = high;
+  useEffect(() => {
+    setLocalValue(value);
+  }, [value]);
 
-  const onLayout = useCallback((event: LayoutChangeEvent) => {
-    trackWidth.current = event.nativeEvent.layout.width;
+  const [low, high] = localValue;
+
+  const handleNativeChange = useCallback((values: number[]) => {
+    if (values.length < 2) {
+      return;
+    }
+
+    setLocalValue([values[0], values[1]]);
   }, []);
 
-  const valueToPosition = useCallback(
-    (nextValue: number) => {
-      if (trackWidth.current === 0 || max === min) {
-        return 0;
+  const handleNativeComplete = useCallback(
+    (values: number[]) => {
+      if (values.length < 2) {
+        return;
       }
 
-      return ((nextValue - min) / (max - min)) * trackWidth.current;
+      onChange([values[0], values[1]]);
     },
-    [max, min],
+    [onChange],
   );
 
-  const positionToValue = useCallback(
-    (position: number) => {
-      if (trackWidth.current === 0 || max === min) {
-        return min;
-      }
+  const handleWebLowChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const next = Number(event.target.value);
 
-      const ratio = Math.max(0, Math.min(1, position / trackWidth.current));
-      return Math.round(min + ratio * (max - min));
-    },
-    [max, min],
-  );
-
-  const lowResponder = useMemo(
-    () =>
-      PanResponder.create({
-        onStartShouldSetPanResponder: () => true,
-        onMoveShouldSetPanResponder: () => true,
-        onPanResponderGrant: () => {
-          lowStartX.current = valueToPosition(lowRef.current);
-        },
-        onPanResponderMove: (_, gestureState) => {
-          const nextValue = positionToValue(lowStartX.current + gestureState.dx);
-          const clamped = Math.max(min, Math.min(nextValue, highRef.current - 1));
-          onChange([clamped, highRef.current]);
-        },
-      }),
-    [min, onChange, positionToValue, valueToPosition],
-  );
-
-  const highResponder = useMemo(
-    () =>
-      PanResponder.create({
-        onStartShouldSetPanResponder: () => true,
-        onMoveShouldSetPanResponder: () => true,
-        onPanResponderGrant: () => {
-          highStartX.current = valueToPosition(highRef.current);
-        },
-        onPanResponderMove: (_, gestureState) => {
-          const nextValue = positionToValue(highStartX.current + gestureState.dx);
-          const clamped = Math.min(max, Math.max(nextValue, lowRef.current + 1));
-          onChange([lowRef.current, clamped]);
-        },
-      }),
-    [max, onChange, positionToValue, valueToPosition],
-  );
-
-  const lowPercent = max > min ? ((low - min) / (max - min)) * 100 : 0;
-  const highPercent = max > min ? ((high - min) / (max - min)) * 100 : 0;
-  const thumbActions = [
-    { name: 'decrement', label: 'Decrease value' },
-    { name: 'increment', label: 'Increase value' },
-  ] as const;
-
-  const handleLowAccessibilityAction = useCallback(
-    (actionName: string) => {
-      if (actionName === 'increment') {
-        onChange([Math.min(high - 1, low + 1), high]);
-      }
-
-      if (actionName === 'decrement') {
-        onChange([Math.max(min, low - 1), high]);
+      if (next < high) {
+        const updated: [number, number] = [next, high];
+        setLocalValue(updated);
+        onChange(updated);
       }
     },
-    [high, low, min, onChange],
+    [high, onChange],
   );
 
-  const handleHighAccessibilityAction = useCallback(
-    (actionName: string) => {
-      if (actionName === 'increment') {
-        onChange([low, Math.min(max, high + 1)]);
-      }
+  const handleWebHighChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const next = Number(event.target.value);
 
-      if (actionName === 'decrement') {
-        onChange([low, Math.max(low + 1, high - 1)]);
+      if (next > low) {
+        const updated: [number, number] = [low, next];
+        setLocalValue(updated);
+        onChange(updated);
       }
     },
-    [high, low, max, onChange],
+    [low, onChange],
   );
 
   return (
@@ -132,102 +81,60 @@ export function RangeSlider({ label, min, max, value, onChange, unit }: RangeSli
           {suffix}
         </Text>
       </View>
-      {Platform.OS === 'web' ? (
-        <View style={styles.webSliderRow}>
-          <Text style={styles.rangeLabel}>
-            {min}
-            {suffix}
-          </Text>
-          <input
-            type="range"
-            min={min}
-            max={max}
-            onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-              const next = Number(event.target.value);
 
-              if (next < high) {
-                onChange([next, high]);
-              }
-            }}
-            style={{ flex: 1 }}
+      {Platform.OS === 'web' ? (
+        <View style={styles.webSliderColumn}>
+          <input
+            aria-label={`${label} minimum`}
+            max={max}
+            min={min}
+            onChange={handleWebLowChange}
+            step={1}
+            style={{ width: '100%' }}
+            type="range"
             value={low}
           />
           <input
-            type="range"
-            min={min}
+            aria-label={`${label} maximum`}
             max={max}
-            onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-              const next = Number(event.target.value);
-
-              if (next > low) {
-                onChange([low, next]);
-              }
-            }}
-            style={{ flex: 1 }}
+            min={min}
+            onChange={handleWebHighChange}
+            step={1}
+            style={{ width: '100%' }}
+            type="range"
             value={high}
           />
-          <Text style={styles.rangeLabel}>
-            {max}
-            {suffix}
-          </Text>
         </View>
       ) : (
-        <>
-          <View
-            accessibilityLabel={`${label} range slider`}
-            onLayout={onLayout}
-            style={styles.sliderContainer}
-          >
-            <View style={styles.track} />
-            <View
-              style={[
-                styles.activeTrack,
-                {
-                  left: `${lowPercent}%`,
-                  width: `${highPercent - lowPercent}%`,
-                },
-              ]}
-            />
-            <View
-              accessibilityActions={thumbActions}
-              accessibilityLabel={`${label} minimum thumb`}
-              accessibilityRole="adjustable"
-              onAccessibilityAction={(event) =>
-                handleLowAccessibilityAction(event.nativeEvent.actionName)
-              }
-              style={[styles.thumb, { left: `${lowPercent}%` }]}
-              testID={`${label}-minimum-thumb`}
-              {...lowResponder.panHandlers}
-            >
-              <View style={styles.thumbInner} />
-            </View>
-            <View
-              accessibilityActions={thumbActions}
-              accessibilityLabel={`${label} maximum thumb`}
-              accessibilityRole="adjustable"
-              onAccessibilityAction={(event) =>
-                handleHighAccessibilityAction(event.nativeEvent.actionName)
-              }
-              style={[styles.thumb, { left: `${highPercent}%` }]}
-              testID={`${label}-maximum-thumb`}
-              {...highResponder.panHandlers}
-            >
-              <View style={styles.thumbInner} />
-            </View>
-          </View>
-
-          <View style={styles.rangeLabels}>
-            <Text style={styles.rangeLabel}>
-              {min}
-              {suffix}
-            </Text>
-            <Text style={styles.rangeLabel}>
-              {max}
-              {suffix}
-            </Text>
-          </View>
-        </>
+        <View accessibilityLabel={`${label} range slider`} style={styles.sliderContainer}>
+          <Slider
+            animateTransitions
+            maximumTrackTintColor={colors.outlineVariant}
+            maximumValue={max}
+            minimumTrackTintColor={colors.gold}
+            minimumValue={min}
+            onSlidingComplete={handleNativeComplete}
+            onValueChange={handleNativeChange}
+            step={1}
+            thumbStyle={styles.thumb}
+            thumbTintColor={colors.primary}
+            thumbTouchSize={{ width: 40, height: 40 }}
+            trackStyle={styles.track}
+            value={localValue}
+          />
+        </View>
       )}
+
+      <View style={styles.rangeLabels}>
+        <Text style={styles.rangeLabel}>
+          {min}
+          {suffix}
+        </Text>
+        <Text style={styles.rangeLabel}>
+          {max}
+          {suffix}
+        </Text>
+      </View>
     </View>
   );
 }
@@ -253,37 +160,16 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_600SemiBold',
   },
   sliderContainer: {
-    height: THUMB_SIZE + 16,
-    justifyContent: 'center',
-    position: 'relative',
+    paddingHorizontal: spacing.xs,
   },
   track: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
     height: TRACK_HEIGHT,
     borderRadius: TRACK_HEIGHT / 2,
-    backgroundColor: colors.outlineVariant,
-  },
-  activeTrack: {
-    position: 'absolute',
-    height: ACTIVE_TRACK_HEIGHT,
-    borderRadius: ACTIVE_TRACK_HEIGHT / 2,
-    backgroundColor: colors.gold,
   },
   thumb: {
-    position: 'absolute',
-    width: THUMB_SIZE,
-    height: THUMB_SIZE,
-    marginLeft: -(THUMB_SIZE / 2),
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  thumbInner: {
     width: THUMB_SIZE,
     height: THUMB_SIZE,
     borderRadius: THUMB_SIZE / 2,
-    backgroundColor: colors.primary,
     borderWidth: 2,
     borderColor: colors.onPrimary,
     shadowColor: '#000',
@@ -292,15 +178,13 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 3,
   },
+  webSliderColumn: {
+    gap: spacing.xs,
+    paddingVertical: spacing.xs,
+  },
   rangeLabels: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-  },
-  webSliderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingVertical: 8,
   },
   rangeLabel: {
     ...typography.labelSm,

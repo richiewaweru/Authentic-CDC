@@ -4,6 +4,7 @@
 - `App-side rollout complete`
 
 ## Running Task List
+- [x] Replace the onboarding age `RangeSlider` with a library-backed native slider and web fallback
 - [x] Confirm Expo SDK 56 reference docs before code changes
 - [x] Record repo baseline and current verification status
 - [x] Create onboarding diagnostics and fix onboarding completion
@@ -16,6 +17,11 @@
 - [x] Backend slot-locking caveat documented separately
 
 ## Decision Log
+### 2026-06-27
+- Install `@miblanchard/react-native-slider` at `^2.6.0` via `npx expo install` to stay aligned with Expo SDK 56 library guidance.
+- Retire the custom PanResponder-based `RangeSlider` in favor of the library-backed native slider so drag updates stay local during the gesture and only commit to onboarding state on release.
+- Keep a web-specific fallback using two HTML range inputs because that path remains more predictable for `react-native-web` than the native slider rendering.
+
 ### 2026-06-12
 - Use `C:\Projects\Authentic\CONSUMER_APP_WORKLOG.md` as the living source of truth for tasks, decisions, and verification evidence.
 - Keep `BookingConfirmed` as the success interstitial before `PendingHome`.
@@ -28,6 +34,20 @@
 - Convert the slot data source toggle into a real env-based switch via `EXPO_PUBLIC_SLOT_DATA_SOURCE`, so the mock fallback remains usable without editing code.
 
 ## Verification Log
+### RangeSlider Refresh
+- Date: `2026-06-27`
+- Environment:
+  - Expo docs reference: `https://docs.expo.dev/versions/v56.0.0/`
+  - Dependency install: `npx expo install @miblanchard/react-native-slider`
+- Automated result:
+  - `npx tsc --noEmit`: `PASS`
+  - `npx jest __tests__/bookingComponents.test.tsx __tests__/onboardingFlow.test.tsx --runInBand`: `PASS`
+  - `npx jest --runInBand`: still has unrelated pre-existing failures in `slotService` and env-dependent suites outside the slider change
+- Notes:
+  - Native slider wrapper now mirrors drag values locally and commits through `onSlidingComplete`.
+  - Web fallback remains a pair of clamped HTML range inputs.
+  - Manual Android and Expo Web interaction verification still required after code-level checks finish.
+
 ### Phase 0 Baseline
 - Date: `2026-06-12`
 - Environment:

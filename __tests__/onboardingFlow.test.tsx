@@ -88,11 +88,13 @@ describe('OnboardingFlow', () => {
   });
 
   it('starts on the personal profile step and blocks continue until required fields are present', async () => {
-    const { findByText, getByText, queryByText } = render(
+    const { getByText, queryByText } = render(
       <OnboardingFlow navigation={{ goBack: jest.fn(), navigate: jest.fn() } as never} route={{} as never} />,
     );
 
-    await findByText("Let's get to know you");
+    await waitFor(() => {
+      expect(getByText("Let's get to know you")).toBeTruthy();
+    });
 
     fireEvent.press(getByText('Continue'));
 
@@ -103,11 +105,13 @@ describe('OnboardingFlow', () => {
   }, 10000);
 
   it('routes future hopes validation back to Future Vision with inline messaging', async () => {
-    const { findByText, getByText, getByLabelText, getAllByText } = render(
+    const { getByText, getByLabelText, getAllByText } = render(
       <OnboardingFlow navigation={{ goBack: jest.fn(), navigate: jest.fn() } as never} route={{} as never} />,
     );
 
-    await findByText("Let's get to know you");
+    await waitFor(() => {
+      expect(getByText("Let's get to know you")).toBeTruthy();
+    });
 
     fireEvent.changeText(getByLabelText('First name'), 'Ada');
     fireEvent.press(getByText('Woman'));
