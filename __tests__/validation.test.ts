@@ -62,6 +62,50 @@ describe('onboardingSchema', () => {
     expect(result.error?.issues[0]?.message).toBe('You must be at least 18 to join.');
   });
 
+  it('accepts date-only birth dates exactly 18 years ago', () => {
+    const today = new Date();
+    const birthDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
+    const dateOnly = [
+      birthDate.getFullYear(),
+      String(birthDate.getMonth() + 1).padStart(2, '0'),
+      String(birthDate.getDate()).padStart(2, '0'),
+    ].join('-');
+
+    const result = onboardingSchema.safeParse({
+      ...validData,
+      dateOfBirth: dateOnly,
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects date-only birth dates one day under 18', () => {
+    const today = new Date();
+    const birthDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate() + 1);
+    const dateOnly = [
+      birthDate.getFullYear(),
+      String(birthDate.getMonth() + 1).padStart(2, '0'),
+      String(birthDate.getDate()).padStart(2, '0'),
+    ].join('-');
+
+    const result = onboardingSchema.safeParse({
+      ...validData,
+      dateOfBirth: dateOnly,
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.message).toBe('You must be at least 18 to join.');
+  });
+
+  it('continues accepting native ISO timestamp birth dates', () => {
+    const result = onboardingSchema.safeParse({
+      ...validData,
+      dateOfBirth: '1992-05-10T00:00:00.000Z',
+    });
+
+    expect(result.success).toBe(true);
+  });
+
   it('rejects empty future hopes', () => {
     const result = onboardingSchema.safeParse({
       ...validData,

@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { isAtLeastAge } from '../utils/date';
+
 const distanceRadiusSchema = z.union([
   z.literal(10),
   z.literal(25),
@@ -23,12 +25,7 @@ const personalProfileStepSchema = z.object({
       message: 'Please select one.',
     }),
   dateOfBirth: z.string().refine((value) => {
-    if (!value) {
-      return false;
-    }
-
-    const age = (Date.now() - new Date(value).getTime()) / (365.25 * 24 * 60 * 60 * 1000);
-    return age >= 18;
+    return isAtLeastAge(value, 18);
   }, {
     message: 'You must be at least 18 to join.',
   }),

@@ -5,6 +5,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import type { OnboardingData } from '../../types/onboarding';
 import { colors, spacing, typography } from '../../theme';
 import { WebDateInput } from '../../components/ui/WebDateInput';
+import { calculateAge, parseDateOfBirth } from '../../utils/date';
 
 interface PersonalProfileStepProps {
   data: OnboardingData;
@@ -25,11 +26,8 @@ export function PersonalProfileStep({
 }: PersonalProfileStepProps) {
   const [showDatePicker, setShowDatePicker] = useState(false);
 
-  const selectedDate = data.dateOfBirth ? new Date(data.dateOfBirth) : undefined;
-  const age =
-    selectedDate !== undefined
-      ? Math.floor((Date.now() - selectedDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000))
-      : null;
+  const selectedDate = parseDateOfBirth(data.dateOfBirth);
+  const age = selectedDate ? calculateAge(selectedDate) : null;
   const displayDate = selectedDate
     ? selectedDate.toLocaleDateString('en-US', {
         year: 'numeric',

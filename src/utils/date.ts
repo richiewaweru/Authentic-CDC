@@ -39,6 +39,60 @@ export const addMinutesToTime = (time: string, minutesToAdd: number) => {
   return `${hours12}:${paddedMinutes} ${meridiem}`;
 };
 
+export function parseDateOfBirth(value?: string | null): Date | null {
+  if (!value) {
+    return null;
+  }
+
+  const dateOnlyMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+
+  if (dateOnlyMatch) {
+    const [, yearText, monthText, dayText] = dateOnlyMatch;
+    const year = Number(yearText);
+    const month = Number(monthText);
+    const day = Number(dayText);
+    const parsed = new Date(year, month - 1, day);
+
+    if (
+      parsed.getFullYear() !== year ||
+      parsed.getMonth() !== month - 1 ||
+      parsed.getDate() !== day
+    ) {
+      return null;
+    }
+
+    return parsed;
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+export function calculateAge(dateOfBirth: Date, today = new Date()): number {
+  let age = today.getFullYear() - dateOfBirth.getFullYear();
+  const birthdayThisYear = new Date(
+    today.getFullYear(),
+    dateOfBirth.getMonth(),
+    dateOfBirth.getDate(),
+  );
+
+  if (today < birthdayThisYear) {
+    age -= 1;
+  }
+
+  return age;
+}
+
+export function isAtLeastAge(value: string | undefined, minimumAge: number, today = new Date()) {
+  const dateOfBirth = parseDateOfBirth(value);
+
+  if (!dateOfBirth) {
+    return false;
+  }
+
+  return calculateAge(dateOfBirth, today) >= minimumAge;
+}
+
 function parseSlotDate(date: string) {
   if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
     const [year, month, day] = date.split('-').map(Number);
