@@ -227,6 +227,56 @@ describe('onboarding service', () => {
     ).toThrow('One of your responses could not be saved. Please try again.');
   });
 
+  it('reports and throws typed recovery data when preferences fail to save', async () => {
+    const onboardingUpsert = jest.fn().mockResolvedValue({ error: null });
+    const preferencesError = {
+      code: '23502',
+      message: 'null value in column "distance_min"',
+      details: 'Failing row contains distance_min',
+    };
+    const preferencesUpsert = jest.fn().mockResolvedValue({
+      data: null,
+      error: preferencesError,
+    });
+    const clientErrorInsert = jest.fn().mockResolvedValue({ data: null, error: null });
+
+    fromMock.mockImplementation((table: string) => {
+      if (table === 'onboarding_responses') {
+        return { upsert: onboardingUpsert };
+      }
+
+      if (table === 'preferences') {
+        return { upsert: preferencesUpsert };
+      }
+
+      if (table === 'client_errors') {
+        return { insert: clientErrorInsert };
+      }
+
+      throw new Error(`Unexpected table: ${table}`);
+    });
+
+    await expect(
+      onboardingService.saveCompletedOnboarding('user-1', {
+        ...sampleOnboardingData,
+        distanceType: 'open',
+      }),
+    ).rejects.toMatchObject({
+      message: "A required detail was missing, so we couldn't save your responses.",
+      action: 'goToStep',
+      step: 'preferences',
+      code: '23502',
+    });
+
+    expect(clientErrorInsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        user_id: 'user-1',
+        context: 'Onboarding / saveCompletedOnboarding',
+        pg_code: '23502',
+      }),
+    );
+  });
+
   it('nulls backward-compatible distance bounds when preference is not radius', () => {
     expect(
       mapOnboardingDataToPreferencesPayload('user-1', {

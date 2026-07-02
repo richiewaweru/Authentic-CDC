@@ -17,6 +17,7 @@ import { useOnboardingPersistence } from '../../hooks/useOnboardingPersistence';
 import { onboardingSchema, onboardingStepSchemas } from '../../lib/validation';
 import { OnboardingStackParamList } from '../../navigation/types';
 import { onboardingService } from '../../services/onboardingService';
+import type { OnboardingSaveError } from '../../services/onboardingService';
 import { useAuthStore } from '../../stores/authStore';
 import { OnboardingData } from '../../types/onboarding';
 import { colors, spacing, typography } from '../../theme';
@@ -51,6 +52,15 @@ const stepMeta = [
     cta: 'Complete Alignment Profile',
   },
 ] as const;
+
+const recoveryStepMap = {
+  profile: 0,
+  preferences: 6,
+} as const;
+
+function isOnboardingSaveError(error: unknown): error is OnboardingSaveError {
+  return error instanceof Error && 'action' in error;
+}
 
 export function OnboardingFlow({ navigation }: Props) {
   const user = useAuthStore((state) => state.user);
@@ -213,6 +223,19 @@ export function OnboardingFlow({ navigation }: Props) {
         await completeFlow();
       } catch (error) {
         console.error('Unable to complete Alignment Profile:', error);
+        if (isOnboardingSaveError(error)) {
+          if (error.action === 'goToStep') {
+            const step = error.step ? recoveryStepMap[error.step] : state.step;
+            dispatch({ type: 'GO_TO_STEP', step });
+            dispatch({ type: 'SET_VALIDATION', message: error.message, step });
+          } else if (error.action === 'reauth') {
+            await signOut();
+          }
+
+          showErrorDialog('Could not complete your Alignment Profile', error.message);
+          return;
+        }
+
         showErrorDialog(
           'Could not complete your Alignment Profile',
           'Please try again in a moment.',

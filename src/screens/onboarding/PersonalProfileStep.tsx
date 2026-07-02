@@ -4,6 +4,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 
 import type { OnboardingData } from '../../types/onboarding';
 import { colors, spacing, typography } from '../../theme';
+import { WebDateInput } from '../../components/ui/WebDateInput';
 
 interface PersonalProfileStepProps {
   data: OnboardingData;
@@ -73,64 +74,46 @@ export function PersonalProfileStep({
 
       <View style={styles.field}>
         <Text style={styles.label}>DATE OF BIRTH</Text>
-        <TouchableOpacity
-          accessibilityLabel="Date of birth"
-          accessibilityRole="button"
-          onPress={() => setShowDatePicker(true)}
-          style={styles.input}
-        >
-          <Text style={displayDate ? styles.inputText : styles.inputPlaceholder}>
-            {displayDate ?? 'Select your date of birth'}
-          </Text>
-          {age !== null ? <Text style={styles.ageHint}>{age} years old</Text> : null}
-        </TouchableOpacity>
-        {showDatePicker ? (
-          Platform.OS === 'web' ? (
-            <input
-              type="date"
-              max={new Date(Date.now() - 18 * 365.25 * 24 * 60 * 60 * 1000)
-                .toISOString()
-                .split('T')[0]}
-              min="1940-01-01"
-              onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-                if (event.target.value) {
-                  updateData({
-                    dateOfBirth: new Date(`${event.target.value}T00:00:00`).toISOString(),
-                  });
-                }
-
-                setShowDatePicker(false);
-              }}
-              style={{
-                width: '100%',
-                padding: 12,
-                fontSize: 16,
-                borderWidth: 1,
-                borderColor: '#D5D0C8',
-                borderRadius: 12,
-                backgroundColor: '#FFFFFF',
-                color: '#1A1A1A',
-                fontFamily: 'Inter, sans-serif',
-              }}
-              value={data.dateOfBirth ? new Date(data.dateOfBirth).toISOString().split('T')[0] : ''}
+        {Platform.OS === 'web' ? (
+          <>
+            <WebDateInput
+              value={data.dateOfBirth}
+              onChange={(iso) => updateData({ dateOfBirth: iso })}
+              minYear={1940}
             />
-          ) : (
-            <DateTimePicker
-              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-              maximumDate={new Date(Date.now() - 18 * 365.25 * 24 * 60 * 60 * 1000)}
-              minimumDate={new Date(1940, 0, 1)}
-              mode="date"
-              onChange={(_event, date) => {
-                setShowDatePicker(Platform.OS === 'ios');
+            {age !== null ? <Text style={styles.ageHint}>{age} years old</Text> : null}
+          </>
+        ) : (
+          <>
+            <TouchableOpacity
+              accessibilityLabel="Date of birth"
+              accessibilityRole="button"
+              onPress={() => setShowDatePicker(true)}
+              style={styles.input}
+            >
+              <Text style={displayDate ? styles.inputText : styles.inputPlaceholder}>
+                {displayDate ?? 'Select your date of birth'}
+              </Text>
+              {age !== null ? <Text style={styles.ageHint}>{age} years old</Text> : null}
+            </TouchableOpacity>
+            {showDatePicker ? (
+              <DateTimePicker
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                maximumDate={new Date(Date.now() - 18 * 365.25 * 24 * 60 * 60 * 1000)}
+                minimumDate={new Date(1940, 0, 1)}
+                mode="date"
+                onChange={(_event, date) => {
+                  setShowDatePicker(Platform.OS === 'ios');
 
-                if (date) {
-                  updateData({ dateOfBirth: date.toISOString() });
-                }
-              }}
-              value={selectedDate ?? new Date(1990, 0, 1)}
-            />
-          )
-        ) : null}
+                  if (date) {
+                    updateData({ dateOfBirth: date.toISOString() });
+                  }
+                }}
+                value={selectedDate ?? new Date(1990, 0, 1)}
+              />
+            ) : null}
+          </>
+        )}
       </View>
 
       <View style={styles.field}>

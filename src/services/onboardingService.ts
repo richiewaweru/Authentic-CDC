@@ -2,6 +2,7 @@ import type { PostgrestError } from '@supabase/supabase-js';
 
 import { getSlotDataSource } from '../config/env';
 import { supabase } from '../config/supabase';
+import { handleDbError, type MappedError } from '../lib/errors/mapDbError';
 import type { OnboardingData } from '../types/onboarding';
 import type { ProfileStatus, UserState } from '../types/auth';
 const EMAIL_TRIGGERS_ENABLED = getSlotDataSource() === 'supabase';
@@ -75,6 +76,27 @@ function mapRequiredValue(
 
 function buildMissingProfileError() {
   return new Error('We could not prepare your profile yet. Please try again or contact support.');
+}
+
+export type OnboardingSaveError = Error &
+  Pick<MappedError, 'action' | 'step'> & {
+    code: string | null;
+  };
+
+async function buildOnboardingSaveError(
+  error: unknown,
+  userId: string,
+): Promise<OnboardingSaveError> {
+  const mapped = await handleDbError(error, {
+    screen: 'Onboarding',
+    action: 'saveCompletedOnboarding',
+    userId,
+  });
+  const saveError = new Error(mapped.message) as OnboardingSaveError;
+  saveError.action = mapped.action;
+  saveError.step = mapped.step;
+  saveError.code = mapped.code;
+  return saveError;
 }
 
 function isMissingProfileError(error: PostgrestError | null) {
@@ -189,12 +211,12 @@ export const onboardingService = {
 
     if (responsesError) {
       console.error('Unable to save onboarding responses:', responsesError);
-      throw new Error('One of your responses could not be saved. Please try again.');
+      throw await buildOnboardingSaveError(responsesError, userId);
     }
 
     if (preferencesError) {
       console.error('Unable to save onboarding preferences:', preferencesError);
-      throw new Error('One of your responses could not be saved. Please try again.');
+      throw await buildOnboardingSaveError(preferencesError, userId);
     }
 
     const { data: profileData, error: profileError } = await supabase
@@ -225,7 +247,10 @@ export const onboardingService = {
 
     if (profileError || !profileData) {
       console.error('Unable to update profile status after onboarding:', profileError);
-      throw new Error('We could not finish setting up your profile. Please try again.');
+      throw await buildOnboardingSaveError(
+        profileError ?? { code: null, message: 'Profile update did not return a row.' },
+        userId,
+      );
     }
 
     const fireOnboardingEmail = async () => {
