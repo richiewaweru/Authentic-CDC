@@ -16,3 +16,17 @@ export type BookingStackParamList = {
   PendingHome: undefined;
   CommunityHome: undefined;
 };
+
+export type CommunityTabParamList = {
+  Home: undefined;
+  Events: undefined;
+  Foundations: undefined;
+  Profile: undefined;
+};
+
+export type CommunityStackParamList = {
+  CommunityTabs: undefined;
+  EventDetail: { eventId: string };
+  ReadingDetail: { readingId: string };
+  EditProfile: undefined;
+};

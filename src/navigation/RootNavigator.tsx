@@ -13,7 +13,7 @@ import { ChooseSlotScreen } from '../screens/booking/ChooseSlotScreen';
 import { ConfirmBookingScreen } from '../screens/booking/ConfirmBookingScreen';
 import { BookingConfirmedScreen } from '../screens/booking/BookingConfirmedScreen';
 import { PendingHomeScreen } from '../screens/booking/PendingHomeScreen';
-import { CommunityHomeScreen } from '../screens/community/CommunityHomeScreen';
+import { CommunityNavigator } from './CommunityNavigator';
 import type { BookingRecord } from '../types/booking';
 import type { UserState } from '../types/auth';
 import { AuthStackParamList, BookingStackParamList, OnboardingStackParamList } from './types';
@@ -29,6 +29,7 @@ export function getInitialBookingRoute(
   if (
     userState === 'community_active' ||
     userState === 'membership_active' ||
+    userState === 'bylaws_accepted' ||
     userState === 'full_member'
   ) {
     return 'CommunityHome';
@@ -82,7 +83,7 @@ function BookingNavigator() {
       <BookingStack.Screen component={ConfirmBookingScreen} name="ConfirmBooking" />
       <BookingStack.Screen component={BookingConfirmedScreen} name="BookingConfirmed" />
       <BookingStack.Screen component={PendingHomeScreen} name="PendingHome" />
-      <BookingStack.Screen component={CommunityHomeScreen} name="CommunityHome" />
+      <BookingStack.Screen component={CommunityNavigator} name="CommunityHome" />
     </BookingStack.Navigator>
   );
 }

@@ -5,6 +5,7 @@ import {
   ScrollView,
   StyleProp,
   StyleSheet,
+  RefreshControlProps,
   View,
   ViewStyle,
 } from 'react-native';
@@ -22,6 +23,7 @@ interface ScreenLayoutProps {
   scrollContentStyle?: StyleProp<ViewStyle>;
   scrollRef?: React.RefObject<ScrollView | null>;
   footerGradient?: boolean;
+  refreshControl?: React.ReactElement<RefreshControlProps>;
 }
 
 export function ScreenLayout({
@@ -33,6 +35,7 @@ export function ScreenLayout({
   scrollContentStyle,
   scrollRef,
   footerGradient = true,
+  refreshControl,
 }: ScreenLayoutProps) {
   const insets = useSafeAreaInsets();
   const shouldShowFooterGradient = footerGradient && Boolean(footer);
@@ -49,6 +52,7 @@ export function ScreenLayout({
         ]}
         keyboardShouldPersistTaps="handled"
         ref={scrollRef}
+        refreshControl={refreshControl}
         showsVerticalScrollIndicator={false}
         style={styles.scroll}
       >
