@@ -24,6 +24,19 @@ jest.mock('../src/services/slotService', () => ({
   releaseSlot: jest.fn(),
 }));
 
+jest.mock('../src/components/ui/ScreenHeader', () => {
+  const React = require('react');
+  const { Text, View } = require('react-native');
+
+  return {
+    ScreenHeader: ({ stepLabel }: { stepLabel?: string }) => (
+      <View>
+        <Text>{stepLabel}</Text>
+      </View>
+    ),
+  };
+});
+
 jest.mock('../src/config/supabase', () => ({
   supabase: {
     functions: {
@@ -51,7 +64,7 @@ jest.mock('@miblanchard/react-native-slider', () => {
 });
 
 import React from 'react';
-import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
+import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react-native';
 
 import { supabase } from '../src/config/supabase';
 import { GuideCard } from '../src/components/ui/GuideCard';
@@ -74,6 +87,10 @@ describe('booking components', () => {
     mockSlider.mockClear();
   });
 
+  afterEach(() => {
+    cleanup();
+  });
+
   it('renders a guide photo when avatarUrl is provided', () => {
     const guide = {
       ...mockGuides[0],
@@ -89,7 +106,7 @@ describe('booking components', () => {
   it('shows the ChooseSlot skeleton while slot data is loading', () => {
     mockedFetchGuides.mockReturnValue(new Promise(() => {}));
 
-    const { getByTestId } = render(
+    const { getByTestId, unmount } = render(
       <ChooseSlotScreen
         navigation={{ goBack: jest.fn(), navigate: jest.fn() } as never}
         route={{ key: 'ChooseSlot-test', name: 'ChooseSlot' } as never}
@@ -97,6 +114,7 @@ describe('booking components', () => {
     );
 
     expect(getByTestId('choose-slot-skeleton')).toBeTruthy();
+    unmount();
   });
 
   it('opens the request time modal from a guide empty state and validates preferred windows', async () => {
