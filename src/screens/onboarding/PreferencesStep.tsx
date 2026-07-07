@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { DealbreakRow } from '../../components/ui/DealbreakRow';
+import { EntranceSection } from '../../components/ui/EntranceSection';
 import { MultiSelectPill } from '../../components/ui/MultiSelectPill';
 import { RangeSlider } from '../../components/ui/RangeSlider';
 import { ToggleRow } from '../../components/ui/ToggleRow';
@@ -43,12 +44,14 @@ export function PreferencesStep({
 
   return (
     <View style={styles.wrapper}>
-      <Text style={styles.headline}>Preferences & Stay Connected</Text>
-      <Text style={styles.subtitle}>
-        Help us surface better alignments and community updates.
-      </Text>
+      <EntranceSection delay={0}>
+        <Text style={styles.headline}>Preferences & Stay Connected</Text>
+        <Text style={styles.subtitle}>
+          Help us surface better alignments and community updates.
+        </Text>
+      </EntranceSection>
       {validationMessage ? <Text style={styles.validation}>{validationMessage}</Text> : null}
-      <View style={styles.section}>
+      <EntranceSection delay={60} style={styles.section}>
         <Text style={styles.sectionTitle}>BASIC PREFERENCES</Text>
         <RangeSlider
           label="Age range"
@@ -106,9 +109,9 @@ export function PreferencesStep({
             selectedValues={data.denominations}
           />
         </View>
-      </View>
+      </EntranceSection>
 
-      <View style={styles.section}>
+      <EntranceSection delay={120} style={styles.section}>
         <Text style={styles.sectionTitle}>ALIGNMENT FILTERS</Text>
         <DealbreakRow
           label="Smoking"
@@ -142,9 +145,9 @@ export function PreferencesStep({
           options={politicalOptions}
           value={data.dealbreakers.politics}
         />
-      </View>
+      </EntranceSection>
 
-      <View style={styles.section}>
+      <EntranceSection delay={180} style={styles.section}>
         <Text style={styles.sectionTitle}>STAY CONNECTED</Text>
         <ToggleRow
           label="New alignments"
@@ -167,7 +170,7 @@ export function PreferencesStep({
           }
           value={data.notifications.communityUpdates}
         />
-      </View>
+      </EntranceSection>
     </View>
   );
 }

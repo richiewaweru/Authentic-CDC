@@ -1,15 +1,27 @@
 import React from 'react';
-import { Alert, Linking, StyleSheet, Text, View } from 'react-native';
+import {
+  Alert,
+  Animated,
+  Easing,
+  Linking,
+  Platform,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import { ScreenLayout } from '../../components/layout';
 import { BookingSummary } from '../../components/ui/BookingSummary';
 import { Button } from '../../components/ui/Button';
+import { GradientHero } from '../../components/ui/GradientHero';
 import { ScreenHeader } from '../../components/ui/ScreenHeader';
+import { useReduceMotion } from '../../hooks/useReduceMotion';
 import { BookingStackParamList } from '../../navigation/types';
 import { useAuthStore } from '../../stores/authStore';
-import { colors, spacing, typography } from '../../theme';
+import { colors, motion, spacing, typography } from '../../theme';
 import { timeTo24Hour } from '../../utils/date';
 
 type Props = NativeStackScreenProps<BookingStackParamList, 'BookingConfirmed'>;
@@ -95,25 +107,67 @@ export function BookingConfirmedScreen({ navigation }: Props) {
       header={
         <ScreenHeader
           onBack={() => navigation.goBack()}
-          progress={1}
+          currentStep={8}
           stepLabel="Booking Confirmed"
+          totalSteps={9}
         />
       }
     >
       <View style={styles.content}>
-        <View style={styles.hero}>
-          <View style={styles.checkCircle}>
-            <Ionicons color={colors.goldDark} name="checkmark" size={26} />
-          </View>
+        <GradientHero roseGlow style={styles.hero}>
+          <Text style={styles.eyebrow}>Alignment Profile</Text>
+          <ConfirmationMark />
           <Text style={styles.headline}>Your Alignment Conversation is Confirmed</Text>
           <Text style={styles.subtitle}>
             We are looking forward to your Alignment Conversation.
           </Text>
-        </View>
+        </GradientHero>
 
         <BookingSummary booking={confirmedBooking} />
       </View>
     </ScreenLayout>
+  );
+}
+
+function ConfirmationMark() {
+  const shimmer = React.useRef(new Animated.Value(0)).current;
+  const reduceMotion = useReduceMotion();
+
+  React.useEffect(() => {
+    if (reduceMotion) {
+      shimmer.setValue(1);
+      return;
+    }
+
+    const timeout = setTimeout(() => {
+      Animated.timing(shimmer, {
+        toValue: 1,
+        duration: motion.duration.confirmationShimmer,
+        easing: Easing.out(Easing.ease),
+        useNativeDriver: Platform.OS !== 'web',
+      }).start();
+    }, 1000);
+
+    return () => clearTimeout(timeout);
+  }, [reduceMotion, shimmer]);
+
+  const translateX = shimmer.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-72, 72],
+  });
+
+  return (
+    <View style={styles.checkCircle}>
+      <Ionicons color={colors.primaryDark} name="checkmark" size={48} />
+      <Animated.View style={[styles.shimmer, { transform: [{ translateX }, { rotate: '18deg' }] }]}>
+        <LinearGradient
+          colors={['rgba(255,255,255,0)', colors.selectionGlowStrong, 'rgba(255,255,255,0)']}
+          end={{ x: 1, y: 0 }}
+          start={{ x: 0, y: 0 }}
+          style={styles.shimmerFill}
+        />
+      </Animated.View>
+    </View>
   );
 }
 
@@ -124,26 +178,42 @@ const styles = StyleSheet.create({
   hero: {
     alignItems: 'center',
     gap: spacing.md,
-    padding: spacing.xl,
-    borderRadius: 24,
-    backgroundColor: colors.surfaceLow,
   },
   checkCircle: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 96,
+    height: 96,
+    borderRadius: 48,
     backgroundColor: colors.goldLight,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
+    shadowColor: colors.gold,
+    shadowOpacity: 0.35,
+    shadowOffset: { width: 0, height: 0 },
+    shadowRadius: 24,
+    elevation: 5,
+  },
+  shimmer: {
+    position: 'absolute',
+    width: 36,
+    height: 140,
+  },
+  shimmerFill: {
+    flex: 1,
+  },
+  eyebrow: {
+    ...typography.eyebrow,
+    color: colors.gold,
+    textAlign: 'center',
   },
   headline: {
     ...typography.headlineLg,
-    color: colors.primaryDark,
+    color: colors.onPrimary,
     textAlign: 'center',
   },
   subtitle: {
     ...typography.bodyMd,
-    color: colors.onSurfaceVariant,
+    color: colors.surface,
     textAlign: 'center',
   },
 });

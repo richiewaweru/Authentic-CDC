@@ -3,6 +3,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { colors, sizes, spacing, typography } from '../../theme';
+import { JourneyPath } from './JourneyPath';
 import { ProgressBar } from './ProgressBar';
 
 interface ScreenHeaderProps {
@@ -10,11 +11,23 @@ interface ScreenHeaderProps {
   stepLabel?: string;
   onBack?: () => void;
   progress?: number;
+  currentStep?: number;
+  totalSteps?: number;
 }
 
-export function ScreenHeader({ eyebrow, stepLabel, onBack, progress }: ScreenHeaderProps) {
+export function ScreenHeader({
+  eyebrow,
+  stepLabel,
+  onBack,
+  progress,
+  currentStep,
+  totalSteps,
+}: ScreenHeaderProps) {
   return (
     <View style={styles.wrapper}>
+      {typeof currentStep === 'number' && typeof totalSteps === 'number' ? (
+        <JourneyPath currentStep={currentStep} totalSteps={totalSteps} label={stepLabel} />
+      ) : null}
       <View style={styles.row}>
         <TouchableOpacity
           accessibilityLabel="Go back"
@@ -32,7 +45,7 @@ export function ScreenHeader({ eyebrow, stepLabel, onBack, progress }: ScreenHea
         </View>
         <View style={styles.backButton} />
       </View>
-      {typeof progress === 'number' ? (
+      {typeof progress === 'number' && typeof currentStep !== 'number' ? (
         <View style={styles.progress}>
           <ProgressBar progress={progress} />
         </View>
@@ -62,9 +75,8 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   eyebrow: {
-    ...typography.labelSm,
+    ...typography.eyebrow,
     color: colors.goldDark,
-    textTransform: 'uppercase',
   },
   stepLabel: {
     ...typography.labelSm,

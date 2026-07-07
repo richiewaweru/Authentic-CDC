@@ -12,7 +12,7 @@ interface GuideCardProps {
 
 export function GuideCard({ guide, selected = false }: GuideCardProps) {
   return (
-    <Card style={[styles.card, selected && styles.selectedCard]}>
+    <Card elevated style={[styles.card, selected && styles.selectedCard]}>
       {guide.avatarUrl ? (
         <Image
           accessibilityLabel={`${guide.name} photo`}
@@ -42,7 +42,7 @@ const styles = StyleSheet.create({
   },
   selectedCard: {
     borderWidth: 2,
-    borderColor: colors.primary,
+    borderColor: colors.gold,
     backgroundColor: colors.surface,
   },
   avatar: {

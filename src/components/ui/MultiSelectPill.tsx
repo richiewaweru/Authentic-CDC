@@ -68,12 +68,20 @@ const styles = StyleSheet.create({
   },
   pill: {
     borderRadius: radii.pill,
-    backgroundColor: colors.sand,
+    borderWidth: 1,
+    borderColor: colors.sand,
+    backgroundColor: colors.surface,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
   },
   goldSelectedPill: {
+    borderColor: colors.gold,
     backgroundColor: colors.goldLight,
+    shadowColor: colors.gold,
+    shadowOpacity: 0.18,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 10,
+    elevation: 2,
   },
   primarySelectedPill: {
     backgroundColor: colors.primary,

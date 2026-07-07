@@ -42,14 +42,22 @@ const styles = StyleSheet.create({
   chip: {
     minHeight: 48,
     borderRadius: radii.pill,
-    backgroundColor: colors.sand,
+    borderWidth: 1,
+    borderColor: colors.sand,
+    backgroundColor: colors.surface,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     alignItems: 'center',
     justifyContent: 'center',
   },
   selectedChip: {
+    borderColor: colors.gold,
     backgroundColor: colors.primary,
+    shadowColor: colors.gold,
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 6 },
+    shadowRadius: 12,
+    elevation: 3,
   },
   label: {
     ...typography.bodySm,

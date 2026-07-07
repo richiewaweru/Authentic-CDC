@@ -24,6 +24,18 @@ jest.mock('../src/services/slotService', () => ({
   releaseSlot: jest.fn(),
 }));
 
+jest.mock('../src/config/supabase', () => ({
+  supabase: {
+    functions: {
+      invoke: jest.fn(),
+    },
+  },
+}));
+
+jest.mock('../src/hooks/useReduceMotion', () => ({
+  useReduceMotion: jest.fn(() => true),
+}));
+
 const mockSlider = jest.fn();
 
 jest.mock('@miblanchard/react-native-slider', () => {
@@ -39,8 +51,9 @@ jest.mock('@miblanchard/react-native-slider', () => {
 });
 
 import React from 'react';
-import { act, render } from '@testing-library/react-native';
+import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 
+import { supabase } from '../src/config/supabase';
 import { GuideCard } from '../src/components/ui/GuideCard';
 import { RangeSlider } from '../src/components/ui/RangeSlider';
 import { mockGuides } from '../src/mocks/guides';
@@ -51,11 +64,13 @@ const mockedFetchGuides = fetchGuides as jest.MockedFunction<typeof fetchGuides>
 const mockedFetchAvailableSlots = fetchAvailableSlots as jest.MockedFunction<
   typeof fetchAvailableSlots
 >;
+const mockedInvoke = supabase.functions.invoke as jest.Mock;
 
 describe('booking components', () => {
   beforeEach(() => {
     mockedFetchGuides.mockReset();
     mockedFetchAvailableSlots.mockReset();
+    mockedInvoke.mockReset().mockResolvedValue({ data: null, error: null });
     mockSlider.mockClear();
   });
 
@@ -82,6 +97,90 @@ describe('booking components', () => {
     );
 
     expect(getByTestId('choose-slot-skeleton')).toBeTruthy();
+  });
+
+  it('opens the request time modal from a guide empty state and validates preferred windows', async () => {
+    mockedFetchGuides.mockResolvedValue([mockGuides[0]]);
+    mockedFetchAvailableSlots.mockResolvedValue([]);
+
+    const { getByLabelText, getByText } = render(
+      <ChooseSlotScreen
+        navigation={{ goBack: jest.fn(), navigate: jest.fn() } as never}
+        route={{ key: 'ChooseSlot-test', name: 'ChooseSlot' } as never}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(getByText('No times available for this guide right now.')).toBeTruthy();
+    });
+
+    fireEvent.press(getByText('Request a time with this guide'));
+    fireEvent.press(getByText('Send request'));
+
+    expect(getByLabelText('Preferred days and times')).toBeTruthy();
+    expect(getByText('Share a few days or time windows that usually work for you.')).toBeTruthy();
+    expect(mockedInvoke).not.toHaveBeenCalled();
+  });
+
+  it('submits a request time payload with preferred windows, note, and guide id', async () => {
+    mockedFetchGuides.mockResolvedValue([mockGuides[0]]);
+    mockedFetchAvailableSlots.mockResolvedValue([]);
+
+    const { getByLabelText, getByText } = render(
+      <ChooseSlotScreen
+        navigation={{ goBack: jest.fn(), navigate: jest.fn() } as never}
+        route={{ key: 'ChooseSlot-test', name: 'ChooseSlot' } as never}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(getByText('Request a time with this guide')).toBeTruthy();
+    });
+
+    fireEvent.press(getByText('Request a time with this guide'));
+    fireEvent.changeText(getByLabelText('Preferred days and times'), 'Weekday evenings after 6 PM');
+    fireEvent.changeText(getByLabelText('Anything staff should know'), 'I am flexible next week.');
+    fireEvent.press(getByText('Send request'));
+
+    await waitFor(() => {
+      expect(mockedInvoke).toHaveBeenCalledWith('request-slot-contact', {
+        body: {
+          preferredWindows: 'Weekday evenings after 6 PM',
+          note: 'I am flexible next week.',
+          guideId: mockGuides[0].id,
+        },
+      });
+    });
+
+    expect(getByText('We received your preferred times.')).toBeTruthy();
+  });
+
+  it('shows an inline error when request time submission fails', async () => {
+    mockedFetchGuides.mockResolvedValue([mockGuides[0]]);
+    mockedFetchAvailableSlots.mockResolvedValue([]);
+    mockedInvoke.mockResolvedValue({ data: null, error: new Error('Function failed') });
+
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const { getByLabelText, getByText } = render(
+      <ChooseSlotScreen
+        navigation={{ goBack: jest.fn(), navigate: jest.fn() } as never}
+        route={{ key: 'ChooseSlot-test', name: 'ChooseSlot' } as never}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(getByText('Request a time with this guide')).toBeTruthy();
+    });
+
+    fireEvent.press(getByText('Request a time with this guide'));
+    fireEvent.changeText(getByLabelText('Preferred days and times'), 'Saturday morning');
+    fireEvent.press(getByText('Send request'));
+
+    await waitFor(() => {
+      expect(getByText('We could not send your request right now. Please try again.')).toBeTruthy();
+    });
+
+    warnSpy.mockRestore();
   });
 
   it('renders the range slider labels and current value', () => {

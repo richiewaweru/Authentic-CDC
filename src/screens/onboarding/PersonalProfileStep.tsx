@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
+import { EntranceSection } from '../../components/ui/EntranceSection';
 import type { OnboardingData } from '../../types/onboarding';
 import { colors, spacing, typography } from '../../theme';
 import { WebDateInput } from '../../components/ui/WebDateInput';
@@ -38,11 +39,13 @@ export function PersonalProfileStep({
 
   return (
     <View style={styles.wrapper}>
-      <Text style={styles.headline}>Let's get to know you</Text>
-      <Text style={styles.subtitle}>This is the foundation of your profile in the community.</Text>
+      <EntranceSection delay={0}>
+        <Text style={styles.headline}>Let's get to know you</Text>
+        <Text style={styles.subtitle}>This is the foundation of your profile in the community.</Text>
+      </EntranceSection>
       {validationMessage ? <Text style={styles.validation}>{validationMessage}</Text> : null}
 
-      <View style={styles.field}>
+      <EntranceSection delay={60} style={styles.field}>
         <Text style={styles.label}>FIRST NAME</Text>
         <TextInput
           accessibilityLabel="First name"
@@ -54,9 +57,9 @@ export function PersonalProfileStep({
           style={styles.input}
           value={data.firstName ?? ''}
         />
-      </View>
+      </EntranceSection>
 
-      <View style={styles.field}>
+      <EntranceSection delay={120} style={styles.field}>
         <Text style={styles.label}>LAST NAME</Text>
         <TextInput
           accessibilityLabel="Last name"
@@ -68,9 +71,9 @@ export function PersonalProfileStep({
           style={styles.input}
           value={data.lastName ?? ''}
         />
-      </View>
+      </EntranceSection>
 
-      <View style={styles.field}>
+      <EntranceSection delay={180} style={styles.field}>
         <Text style={styles.label}>DATE OF BIRTH</Text>
         {Platform.OS === 'web' ? (
           <>
@@ -112,9 +115,9 @@ export function PersonalProfileStep({
             ) : null}
           </>
         )}
-      </View>
+      </EntranceSection>
 
-      <View style={styles.field}>
+      <EntranceSection delay={240} style={styles.field}>
         <Text style={styles.label}>I AM A</Text>
         <View style={styles.chipRow}>
           {GENDER_OPTIONS.map((option) => (
@@ -131,9 +134,9 @@ export function PersonalProfileStep({
             </TouchableOpacity>
           ))}
         </View>
-      </View>
+      </EntranceSection>
 
-      <View style={styles.field}>
+      <EntranceSection delay={300} style={styles.field}>
         <Text style={styles.label}>CITY & STATE</Text>
         <TextInput
           accessibilityLabel="City and state"
@@ -146,9 +149,9 @@ export function PersonalProfileStep({
           value={data.cityState ?? ''}
         />
         <Text style={styles.hint}>Used to surface members near you - no GPS required</Text>
-      </View>
+      </EntranceSection>
 
-      <View style={styles.field}>
+      <EntranceSection delay={360} style={styles.field}>
         <Text style={styles.label}>
           A SHORT BIO <Text style={styles.optional}>(optional)</Text>
         </Text>
@@ -168,7 +171,7 @@ export function PersonalProfileStep({
           value={data.bio ?? ''}
         />
         <Text style={styles.charCount}>{(data.bio ?? '').length}/150</Text>
-      </View>
+      </EntranceSection>
     </View>
   );
 }

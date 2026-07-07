@@ -6,6 +6,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { ScreenLayout } from '../../components/layout';
 import { Card } from '../../components/ui/Card';
+import { GradientHero } from '../../components/ui/GradientHero';
 import { CommunityStackParamList, CommunityTabParamList } from '../../navigation/types';
 import {
   Announcement,
@@ -72,6 +73,24 @@ export function HomeScreen({ navigation }: Props) {
         <Text style={styles.eyebrow}>Community</Text>
         <Text style={styles.headline}>Home</Text>
       </View>
+
+      <GradientHero variant="sand" style={styles.hero}>
+        <Text style={styles.heroTitle}>You belong here.</Text>
+        <Text style={styles.heroBody}>
+          Grow in faith, build real relationships, and take the next guided step.
+        </Text>
+      </GradientHero>
+
+      <TouchableOpacity activeOpacity={0.9} onPress={() => navigation.navigate('Foundations')}>
+        <Card elevated style={styles.nextStepCard}>
+          <View style={styles.priorityBar} />
+          <Text style={styles.nextStepLabel}>Next Step</Text>
+          <Text style={styles.cardTitle}>Continue your Foundations path</Text>
+          <Text style={styles.cardBody}>
+            Read the next reflection and keep building your community rhythm.
+          </Text>
+        </Card>
+      </TouchableOpacity>
 
       {loading ? <ActivityIndicator color={colors.primary} /> : null}
       {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -165,6 +184,19 @@ const styles = StyleSheet.create({
   header: {
     gap: spacing.xs,
   },
+  hero: {
+    minHeight: 132,
+    gap: spacing.sm,
+  },
+  heroTitle: {
+    ...typography.headlineMd,
+    color: colors.primaryDark,
+  },
+  heroBody: {
+    ...typography.bodySm,
+    color: colors.onSurfaceVariant,
+    maxWidth: 280,
+  },
   eyebrow: {
     ...typography.labelSm,
     color: colors.goldDark,
@@ -196,6 +228,25 @@ const styles = StyleSheet.create({
   eventCard: {
     padding: spacing.md,
     gap: spacing.xs,
+  },
+  nextStepCard: {
+    padding: spacing.md,
+    paddingLeft: spacing.lg,
+    gap: spacing.xs,
+    overflow: 'hidden',
+  },
+  priorityBar: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 4,
+    backgroundColor: colors.gold,
+  },
+  nextStepLabel: {
+    ...typography.labelSm,
+    color: colors.goldDark,
+    textTransform: 'uppercase',
   },
   toneBar: {
     width: 5,

@@ -169,6 +169,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     flexDirection: 'row',
     gap: spacing.md,
+    shadowOpacity: 0.06,
   },
   emptyCard: {
     padding: spacing.md,

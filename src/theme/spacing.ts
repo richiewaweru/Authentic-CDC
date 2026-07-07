@@ -13,6 +13,7 @@ export const radii = {
   input: 12,
   pill: 9999,
   progressBar: 99,
+  pathNode: 9999,
 } as const;
 
 export const sizes = {
@@ -20,4 +21,9 @@ export const sizes = {
   screenPadding: 24,
   progressBarHeight: 4,
   hitSlop: 12,
+  pathNodeSize: 24,
+  pathNodeSizeActive: 28,
+  pathLineHeight: 2,
+  heroMinHeight: 220,
+  iconGraphicSize: 96,
 } as const;

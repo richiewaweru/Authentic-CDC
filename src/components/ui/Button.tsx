@@ -1,6 +1,9 @@
 import React from 'react';
 import {
   ActivityIndicator,
+  Animated,
+  Easing,
+  Platform,
   StyleProp,
   StyleSheet,
   Text,
@@ -9,7 +12,8 @@ import {
   ViewStyle,
 } from 'react-native';
 
-import { colors, radii, sizes, spacing, typography } from '../../theme';
+import { useReduceMotion } from '../../hooks/useReduceMotion';
+import { colors, motion, radii, sizes, spacing, typography } from '../../theme';
 
 type ButtonVariant = 'primary' | 'secondary' | 'outlined';
 
@@ -36,6 +40,22 @@ export function Button({
 }: ButtonProps) {
   const isPrimary = variant === 'primary';
   const buttonDisabled = disabled || loading;
+  const scale = React.useRef(new Animated.Value(1)).current;
+  const reduceMotion = useReduceMotion();
+
+  const animateScale = (toValue: number, duration: number) => {
+    if (reduceMotion) {
+      scale.setValue(1);
+      return;
+    }
+
+    Animated.timing(scale, {
+      toValue,
+      duration,
+      easing: Easing.out(Easing.ease),
+      useNativeDriver: Platform.OS !== 'web',
+    }).start();
+  };
 
   return (
     <TouchableOpacity
@@ -44,27 +64,33 @@ export function Button({
       accessibilityRole="button"
       accessibilityState={{ disabled: buttonDisabled, busy: loading }}
       onPress={onPress}
+      onPressIn={() => animateScale(0.97, motion.duration.fast)}
+      onPressOut={() => animateScale(1, motion.duration.pressOut)}
       disabled={buttonDisabled}
-      style={[
-        styles.base,
-        isPrimary && styles.primary,
-        variant !== 'primary' && styles.secondary,
-        variant === 'outlined' && styles.outlined,
-        buttonDisabled && styles.disabled,
-        style,
-      ]}
+      style={style}
     >
-      {loading ? (
-        <ActivityIndicator color={isPrimary ? colors.onPrimary : colors.primary} />
-      ) : (
-        <View style={styles.content}>
-          {iconLeft ? <View style={styles.iconLeft}>{iconLeft}</View> : null}
-          <Text style={[styles.label, isPrimary ? styles.primaryLabel : styles.secondaryLabel]}>
-            {title}
-          </Text>
-          {iconRight ? <View style={styles.iconRight}>{iconRight}</View> : null}
-        </View>
-      )}
+      <Animated.View
+        style={[
+          styles.base,
+          isPrimary && styles.primary,
+          variant !== 'primary' && styles.secondary,
+          variant === 'outlined' && styles.outlined,
+          buttonDisabled && styles.disabled,
+          { transform: [{ scale }] },
+        ]}
+      >
+        {loading ? (
+          <ActivityIndicator color={isPrimary ? colors.onPrimary : colors.primary} />
+        ) : (
+          <View style={styles.content}>
+            {iconLeft ? <View style={styles.iconLeft}>{iconLeft}</View> : null}
+            <Text style={[styles.label, isPrimary ? styles.primaryLabel : styles.secondaryLabel]}>
+              {title}
+            </Text>
+            {iconRight ? <View style={styles.iconRight}>{iconRight}</View> : null}
+          </View>
+        )}
+      </Animated.View>
     </TouchableOpacity>
   );
 }

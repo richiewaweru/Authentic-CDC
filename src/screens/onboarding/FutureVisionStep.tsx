@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { EntranceSection } from '../../components/ui/EntranceSection';
 import { MultiSelectPill } from '../../components/ui/MultiSelectPill';
+import { SymbolicIcon } from '../../components/ui/SymbolicIcon';
 import { TextArea } from '../../components/ui/TextArea';
 import { OnboardingData } from '../../types/onboarding';
 import { colors, spacing, typography } from '../../theme';
@@ -28,12 +30,17 @@ export function FutureVisionStep({
 
   return (
     <View style={styles.wrapper}>
-      <Text style={styles.headline}>Future Vision</Text>
-      <Text style={styles.subtitle}>
-        Reflect on the kind of relationship and life you hope to build.
-      </Text>
+      <EntranceSection delay={0}>
+        <Text style={styles.headline}>Future Vision</Text>
+        <Text style={styles.subtitle}>
+          Reflect on the kind of relationship and life you hope to build.
+        </Text>
+      </EntranceSection>
+      <EntranceSection delay={60}>
+        <SymbolicIcon name="trending-up" />
+      </EntranceSection>
       {validationMessage ? <Text style={styles.validation}>{validationMessage}</Text> : null}
-      <View style={styles.section}>
+      <EntranceSection delay={120} style={styles.section}>
         <Text style={styles.label}>IN THE FUTURE, I HOPE TO BUILD...</Text>
         <TextArea
           onChangeText={(value) => updateData({ futureHopes: value })}
@@ -41,8 +48,8 @@ export function FutureVisionStep({
           placeholder="Share your hopes for the future..."
           value={data.futureHopes}
         />
-      </View>
-      <View style={styles.section}>
+      </EntranceSection>
+      <EntranceSection delay={180} style={styles.section}>
         <Text style={styles.label}>TO ME, AN AUTHENTIC RELATIONSHIP MEANS...</Text>
         <TextArea
           onChangeText={(value) => updateData({ authenticMeaning: value })}
@@ -50,11 +57,11 @@ export function FutureVisionStep({
           placeholder="Share what authenticity means to you..."
           value={data.authenticMeaning}
         />
-      </View>
-      <View style={styles.section}>
+      </EntranceSection>
+      <EntranceSection delay={240} style={styles.section}>
         <Text style={styles.label}>OPTIONAL VALUE CHIPS</Text>
         <MultiSelectPill onToggle={appendChip} options={futureValueChips} selectedValues={[]} />
-      </View>
+      </EntranceSection>
     </View>
   );
 }

@@ -1,7 +1,8 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 
-import { colors, radii, sizes } from '../../theme';
+import { colors, gradients, radii, sizes } from '../../theme';
 
 interface ProgressBarProps {
   progress: number;
@@ -10,7 +11,12 @@ interface ProgressBarProps {
 export function ProgressBar({ progress }: ProgressBarProps) {
   return (
     <View style={styles.track}>
-      <View style={[styles.fill, { width: `${Math.max(0, Math.min(progress, 1)) * 100}%` }]} />
+      <LinearGradient
+        colors={gradients.pathFill.colors}
+        end={gradients.pathFill.end}
+        start={gradients.pathFill.start}
+        style={[styles.fill, { width: `${Math.max(0, Math.min(progress, 1)) * 100}%` }]}
+      />
     </View>
   );
 }
@@ -26,6 +32,5 @@ const styles = StyleSheet.create({
   fill: {
     height: '100%',
     borderRadius: radii.progressBar,
-    backgroundColor: colors.gold,
   },
 });

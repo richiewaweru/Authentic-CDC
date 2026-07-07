@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Animated,
   BackHandler,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -14,6 +15,7 @@ import { ScreenLayout } from '../../components/layout';
 import { Button } from '../../components/ui/Button';
 import { ScreenHeader } from '../../components/ui/ScreenHeader';
 import { useOnboardingPersistence } from '../../hooks/useOnboardingPersistence';
+import { useReduceMotion } from '../../hooks/useReduceMotion';
 import { onboardingSchema, onboardingStepSchemas } from '../../lib/validation';
 import { OnboardingStackParamList } from '../../navigation/types';
 import { onboardingService } from '../../services/onboardingService';
@@ -72,6 +74,7 @@ export function OnboardingFlow({ navigation }: Props) {
   const slideAnim = useRef(new Animated.Value(0)).current;
   const firstRender = useRef(true);
   const scrollRef = useRef<ScrollView>(null);
+  const reduceMotion = useReduceMotion();
   const persistence = useOnboardingPersistence(user?.id ?? 'guest');
 
   const currentMeta = stepMeta[state.step];
@@ -114,13 +117,18 @@ export function OnboardingFlow({ navigation }: Props) {
       return;
     }
 
+    if (reduceMotion) {
+      slideAnim.setValue(0);
+      return;
+    }
+
     slideAnim.setValue(state.direction === 'forward' ? 32 : -32);
     Animated.timing(slideAnim, {
       toValue: 0,
       duration: 260,
-      useNativeDriver: true,
+      useNativeDriver: Platform.OS !== 'web',
     }).start();
-  }, [slideAnim, state.direction, state.step]);
+  }, [reduceMotion, slideAnim, state.direction, state.step]);
 
   useEffect(() => {
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
@@ -332,9 +340,11 @@ export function OnboardingFlow({ navigation }: Props) {
       header={
         <ScreenHeader
           eyebrow={currentMeta.eyebrow}
+          currentStep={state.step}
           onBack={handleBack}
           progress={currentMeta.progress}
           stepLabel={currentMeta.label}
+          totalSteps={stepMeta.length}
         />
       }
       scrollContentStyle={styles.scrollContent}

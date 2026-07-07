@@ -1,7 +1,8 @@
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
-import { colors, radii, spacing, typography } from '../../theme';
+import { spacing } from '../../theme';
+import { ChoiceCard } from './ChoiceCard';
 
 interface GridOption {
   label: string;
@@ -29,23 +30,15 @@ export function MultiSelectGrid({
         const isDisabled = !isSelected && typeof limit === 'number' && selectedValues.length >= limit;
 
         return (
-          <TouchableOpacity
+          <ChoiceCard
             key={normalizedOption.label}
-            activeOpacity={0.9}
-            accessibilityLabel={normalizedOption.label}
             accessibilityRole="checkbox"
-            accessibilityState={{ selected: isSelected, disabled: isDisabled }}
             disabled={isDisabled}
             onPress={() => onToggle(normalizedOption.label)}
-            style={[styles.item, isSelected && styles.selected, isDisabled && styles.disabled]}
-          >
-            {normalizedOption.icon ? (
-              <Text style={styles.icon}>{normalizedOption.icon}</Text>
-            ) : null}
-            <Text style={[styles.label, isSelected && styles.selectedLabel]}>
-              {normalizedOption.label}
-            </Text>
-          </TouchableOpacity>
+            selected={isSelected}
+            style={styles.item}
+            title={normalizedOption.icon ? `${normalizedOption.icon} ${normalizedOption.label}` : normalizedOption.label}
+          />
         );
       })}
     </View>
@@ -60,31 +53,7 @@ const styles = StyleSheet.create({
   },
   item: {
     width: '48%',
-    borderRadius: radii.input,
-    backgroundColor: colors.sand,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
     minHeight: 64,
     justifyContent: 'center',
-    alignItems: 'center',
-  },
-  icon: {
-    fontSize: 20,
-    marginBottom: 4,
-  },
-  selected: {
-    backgroundColor: colors.primary,
-  },
-  label: {
-    ...typography.bodySm,
-    color: colors.charcoal,
-    fontFamily: 'Inter_500Medium',
-    textAlign: 'center',
-  },
-  selectedLabel: {
-    color: colors.onPrimary,
-  },
-  disabled: {
-    opacity: 0.45,
   },
 });

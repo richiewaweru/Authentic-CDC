@@ -6,6 +6,8 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { ScreenLayout } from '../../components/layout';
 import { Card } from '../../components/ui/Card';
+import { GradientHero } from '../../components/ui/GradientHero';
+import { ProgressBar } from '../../components/ui/ProgressBar';
 import { CommunityStackParamList, CommunityTabParamList } from '../../navigation/types';
 import { getReadings, Reading, ReadingCategory } from '../../services/communityService';
 import { colors, spacing, typography } from '../../theme';
@@ -59,6 +61,15 @@ export function FoundationsScreen({ navigation }: Props) {
         <Text style={styles.eyebrow}>Community</Text>
         <Text style={styles.headline}>Foundations</Text>
       </View>
+
+      <GradientHero variant="sand" style={styles.progressHero}>
+        <View style={styles.progressHeader}>
+          <Text style={styles.heroTitle}>Your Foundations Path</Text>
+          <Text style={styles.progressLabel}>35% Complete</Text>
+        </View>
+        <Text style={styles.heroBody}>The Life of Jesus</Text>
+        <ProgressBar progress={0.35} />
+      </GradientHero>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
         {CATEGORIES.map((item) => (
@@ -122,6 +133,30 @@ const styles = StyleSheet.create({
   },
   header: {
     gap: spacing.xs,
+  },
+  progressHero: {
+    minHeight: 136,
+    gap: spacing.sm,
+  },
+  progressHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+  },
+  heroTitle: {
+    ...typography.bodyMd,
+    color: colors.primaryDark,
+    fontFamily: 'Inter_600SemiBold',
+    flexShrink: 1,
+  },
+  heroBody: {
+    ...typography.bodySm,
+    color: colors.onSurfaceVariant,
+  },
+  progressLabel: {
+    ...typography.labelSm,
+    color: colors.goldDark,
   },
   eyebrow: {
     ...typography.labelSm,

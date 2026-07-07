@@ -162,9 +162,8 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   eyebrow: {
-    ...typography.labelSm,
+    ...typography.eyebrow,
     color: colors.goldDark,
-    textTransform: 'uppercase',
   },
   headline: {
     ...typography.headlineLg,

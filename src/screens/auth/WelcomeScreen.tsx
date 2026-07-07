@@ -4,6 +4,9 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { ScreenLayout } from '../../components/layout';
 import { Button } from '../../components/ui/Button';
+import { GradientHero } from '../../components/ui/GradientHero';
+import { JourneyPath } from '../../components/ui/JourneyPath';
+import { SymbolicIcon } from '../../components/ui/SymbolicIcon';
 import { colors, spacing, typography } from '../../theme';
 import { AuthStackParamList } from '../../navigation/types';
 
@@ -12,6 +15,7 @@ type Props = NativeStackScreenProps<AuthStackParamList, 'Welcome'>;
 export function WelcomeScreen({ navigation }: Props) {
   return (
     <ScreenLayout
+      footerGradient={false}
       footer={
         <>
           <Button title="Join the Community" onPress={() => navigation.navigate('Auth', { mode: 'join' })} />
@@ -36,12 +40,16 @@ export function WelcomeScreen({ navigation }: Props) {
         />
       </View>
 
-      <View style={styles.hero}>
-        <Text style={styles.headline}>A Different kind of singles Community</Text>
+      <JourneyPath currentStep={0} totalSteps={9} label="Welcome" />
+
+      <GradientHero style={styles.hero}>
+        <Text style={styles.eyebrow}>Alignment Profile</Text>
+        <Text style={styles.headline}>Welcome to Authentic</Text>
         <Text style={styles.subtitle}>
-          A Singles Club for Intentional and Authentic Christian Connections
+          Begin a guided path toward intentional Christian community.
         </Text>
-      </View>
+        <SymbolicIcon name="link-2" style={styles.heroIcon} tone="dark" />
+      </GradientHero>
 
       <View style={styles.bullets}>
         <Text style={styles.bullet}>NOT JUST MATCHING.</Text>
@@ -54,31 +62,42 @@ export function WelcomeScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   scrollContent: {
-    paddingTop: spacing.xxl + spacing.lg,
+    paddingTop: spacing.lg,
   },
   brandBlock: {
     alignItems: 'center',
     gap: spacing.sm,
   },
   logo: {
-    width: 200,
-    height: 200,
+    width: 148,
+    height: 148,
     alignSelf: 'center',
-    marginBottom: spacing.lg,
+    marginBottom: spacing.sm,
   },
   hero: {
     gap: spacing.md,
+    alignItems: 'center',
+    minHeight: 256,
+    paddingVertical: spacing.lg,
+  },
+  eyebrow: {
+    ...typography.eyebrow,
+    color: colors.gold,
+    textAlign: 'center',
   },
   headline: {
     ...typography.headlineXl,
-    color: colors.primaryDark,
+    color: colors.onPrimary,
     textAlign: 'center',
   },
   subtitle: {
     ...typography.bodyMd,
-    color: colors.onSurfaceVariant,
+    color: colors.surface,
     textAlign: 'center',
-    fontStyle: 'italic',
+  },
+  heroIcon: {
+    width: 56,
+    height: 56,
   },
   bullets: {
     gap: spacing.sm,

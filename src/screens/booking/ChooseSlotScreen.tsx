@@ -5,6 +5,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ScreenLayout } from '../../components/layout';
 import { Button } from '../../components/ui/Button';
 import { DatePicker } from '../../components/ui/DatePicker';
+import { EntranceSection } from '../../components/ui/EntranceSection';
 import { GuideCard } from '../../components/ui/GuideCard';
 import { ScreenHeader } from '../../components/ui/ScreenHeader';
 import { SkeletonBlock } from '../../components/ui/SkeletonBlock';
@@ -14,6 +15,7 @@ import { fetchAvailableSlots, fetchGuides } from '../../services/slotService';
 import { useAuthStore } from '../../stores/authStore';
 import { Guide, Slot } from '../../types/booking';
 import { colors, radii, spacing, typography } from '../../theme';
+import { RequestTimeModal } from './RequestTimeModal';
 
 type Props = NativeStackScreenProps<BookingStackParamList, 'ChooseSlot'>;
 
@@ -24,6 +26,7 @@ export function ChooseSlotScreen({ navigation }: Props) {
   const [selectedGuideId, setSelectedGuideId] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
+  const [requestModalOpen, setRequestModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -150,14 +153,16 @@ export function ChooseSlotScreen({ navigation }: Props) {
       header={
         <ScreenHeader
           onBack={() => navigation.goBack()}
-          progress={0.5}
+          currentStep={7}
+          totalSteps={9}
           stepLabel="Alignment Conversation"
         />
       }
     >
       <View style={styles.content}>
         <View style={styles.copy}>
-          <Text style={styles.headline}>Choose a Time</Text>
+          <Text style={styles.eyebrow}>Alignment Profile</Text>
+          <Text style={styles.headline}>Schedule your Alignment Conversation</Text>
           <Text style={styles.subtitle}>
             Select an Alignment Conversation time that works best for you.
           </Text>
@@ -213,14 +218,19 @@ export function ChooseSlotScreen({ navigation }: Props) {
               }}
               selectedDate={selectedDate}
             />
-            <View style={styles.times}>
+            <EntranceSection
+              delay={selectedDate ? 0 : 0}
+              distance={16}
+              playKey={selectedDate ?? 'no-date'}
+              style={styles.times}
+            >
               <Text style={styles.label}>AVAILABLE TIMES</Text>
               <TimeSlotList
                 onSelect={setSelectedSlot}
                 selectedSlotId={selectedSlot?.id ?? null}
                 slots={availableTimes}
               />
-            </View>
+            </EntranceSection>
           </>
         ) : selectedGuide ? (
           <View style={styles.emptyState}>
@@ -228,6 +238,11 @@ export function ChooseSlotScreen({ navigation }: Props) {
             <Text style={styles.emptyText}>
               Choose another guide or check back soon for new Alignment Conversation times.
             </Text>
+            <Button
+              onPress={() => setRequestModalOpen(true)}
+              title="Request a time with this guide"
+              variant="secondary"
+            />
           </View>
         ) : (
           <View style={styles.emptyState}>
@@ -235,9 +250,19 @@ export function ChooseSlotScreen({ navigation }: Props) {
             <Text style={styles.emptyText}>
               Check back soon and we will surface new Alignment Conversation times.
             </Text>
+            <Button
+              onPress={() => setRequestModalOpen(true)}
+              title="Request a time"
+              variant="secondary"
+            />
           </View>
         )}
       </View>
+      <RequestTimeModal
+        guide={selectedGuide}
+        onClose={() => setRequestModalOpen(false)}
+        visible={requestModalOpen}
+      />
     </ScreenLayout>
   );
 }
@@ -252,6 +277,10 @@ const styles = StyleSheet.create({
   headline: {
     ...typography.headlineLg,
     color: colors.primaryDark,
+  },
+  eyebrow: {
+    ...typography.eyebrow,
+    color: colors.goldDark,
   },
   subtitle: {
     ...typography.bodyMd,

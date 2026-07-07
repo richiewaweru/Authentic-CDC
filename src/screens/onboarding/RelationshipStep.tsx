@@ -1,8 +1,10 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { EntranceSection } from '../../components/ui/EntranceSection';
 import { MultiSelectPill } from '../../components/ui/MultiSelectPill';
 import { SingleSelect } from '../../components/ui/SingleSelect';
+import { SymbolicIcon } from '../../components/ui/SymbolicIcon';
 import { OnboardingData } from '../../types/onboarding';
 import { colors, spacing, typography } from '../../theme';
 import { relationshipGoals, spouseQualities } from './options';
@@ -28,20 +30,25 @@ export function RelationshipStep({
 
   return (
     <View style={styles.wrapper}>
-      <Text style={styles.headline}>Relationship Intentions</Text>
-      <Text style={styles.subtitle}>
-        Tell us what kind of connection you are prayerfully open to.
-      </Text>
+      <EntranceSection delay={0}>
+        <Text style={styles.headline}>Relationship Intentions</Text>
+        <Text style={styles.subtitle}>
+          Tell us what kind of connection you are prayerfully open to.
+        </Text>
+      </EntranceSection>
+      <EntranceSection delay={60}>
+        <SymbolicIcon name="git-commit" />
+      </EntranceSection>
       {validationMessage ? <Text style={styles.validation}>{validationMessage}</Text> : null}
-      <View style={styles.section}>
+      <EntranceSection delay={120} style={styles.section}>
         <Text style={styles.label}>WHAT TYPE OF RELATIONSHIP ARE YOU SEEKING?</Text>
         <SingleSelect
           onSelect={(value) => updateData({ relationshipGoal: value })}
           options={relationshipGoals}
           selectedValue={data.relationshipGoal}
         />
-      </View>
-      <View style={styles.section}>
+      </EntranceSection>
+      <EntranceSection delay={180} style={styles.section}>
         <View style={styles.counterRow}>
           <Text style={styles.label}>CHOOSE UP TO 5 QUALITIES</Text>
           <Text style={styles.counter}>{data.spouseQualities.length}/5</Text>
@@ -52,7 +59,7 @@ export function RelationshipStep({
           options={spouseQualities}
           selectedValues={data.spouseQualities}
         />
-      </View>
+      </EntranceSection>
     </View>
   );
 }

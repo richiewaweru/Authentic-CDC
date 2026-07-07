@@ -1,15 +1,16 @@
 import React from 'react';
 import { StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
 
-import { colors, radii } from '../../theme';
+import { colors, radii, shadows } from '../../theme';
 
 interface CardProps {
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
+  elevated?: boolean;
 }
 
-export function Card({ children, style }: CardProps) {
-  return <View style={[styles.card, style]}>{children}</View>;
+export function Card({ children, elevated = false, style }: CardProps) {
+  return <View style={[styles.card, elevated && styles.elevated, style]}>{children}</View>;
 }
 
 const styles = StyleSheet.create({
@@ -18,10 +19,9 @@ const styles = StyleSheet.create({
     borderRadius: radii.card,
     borderWidth: 1,
     borderColor: colors.sand,
-    shadowColor: colors.primary,
-    shadowOpacity: 0.04,
-    shadowOffset: { width: 0, height: 10 },
-    shadowRadius: 30,
-    elevation: 2,
+    ...shadows.contact,
+  },
+  elevated: {
+    ...shadows.ambient,
   },
 });

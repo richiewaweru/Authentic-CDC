@@ -43,6 +43,13 @@ export const typography = {
     fontSize: 12,
     lineHeight: 16,
   },
+  eyebrow: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 11,
+    lineHeight: 14,
+    letterSpacing: 1.6,
+    textTransform: 'uppercase' as const,
+  },
   button: {
     fontFamily: 'Inter_500Medium',
     fontSize: 16,

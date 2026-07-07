@@ -22,4 +22,13 @@ export const colors = {
   onError: '#FFFFFF',
   successTint: '#E2F2E8',
   overlay: 'rgba(27, 28, 26, 0.08)',
+  roseGold: '#D9B8A3',
+  roseGoldTint: 'rgba(217, 184, 163, 0.12)',
+  pathLine: '#C2C8C1',
+  pathLineFilled: '#C6A85E',
+  pathNodeIdle: '#EFEEEB',
+  pathNodeActive: '#C6A85E',
+  pathNodeComplete: '#1F3D2B',
+  selectionGlow: 'rgba(198, 168, 94, 0.24)',
+  selectionGlowStrong: 'rgba(198, 168, 94, 0.4)',
 } as const;

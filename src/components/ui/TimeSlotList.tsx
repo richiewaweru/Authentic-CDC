@@ -40,13 +40,21 @@ const styles = StyleSheet.create({
   },
   button: {
     borderRadius: radii.input,
-    backgroundColor: colors.sand,
+    borderWidth: 1,
+    borderColor: colors.sand,
+    backgroundColor: colors.surface,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     alignItems: 'center',
   },
   selected: {
+    borderColor: colors.gold,
     backgroundColor: colors.primary,
+    shadowColor: colors.gold,
+    shadowOpacity: 0.24,
+    shadowOffset: { width: 0, height: 8 },
+    shadowRadius: 16,
+    elevation: 4,
   },
   label: {
     ...typography.bodyMd,
