@@ -17,6 +17,57 @@ jest.mock('../src/stores/authStore', () => ({
     selector({ setBookingSelection: jest.fn() }),
 }));
 
+jest.mock('../src/components/layout', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+
+  return {
+    ScreenLayout: ({
+      children,
+      footer,
+      header,
+    }: {
+      children?: React.ReactNode;
+      footer?: React.ReactNode;
+      header?: React.ReactNode;
+    }) => (
+      <View>
+        {header}
+        {children}
+        {footer}
+      </View>
+    ),
+  };
+});
+
+jest.mock('../src/components/ui/Button', () => {
+  const React = require('react');
+  const { Text, TouchableOpacity } = require('react-native');
+
+  return {
+    Button: ({
+      disabled,
+      loading,
+      onPress,
+      title,
+    }: {
+      disabled?: boolean;
+      loading?: boolean;
+      onPress: () => void;
+      title: string;
+    }) => (
+      <TouchableOpacity
+        accessibilityLabel={title}
+        accessibilityRole="button"
+        disabled={disabled || loading}
+        onPress={onPress}
+      >
+        <Text>{loading ? 'Loading' : title}</Text>
+      </TouchableOpacity>
+    ),
+  };
+});
+
 jest.mock('../src/services/slotService', () => ({
   bookSlot: jest.fn(),
   fetchAvailableSlots: jest.fn(),
