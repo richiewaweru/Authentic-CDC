@@ -4,6 +4,7 @@ jest.mock('../src/config/supabase', () => ({
       getUser: jest.fn(),
     },
     from: jest.fn(),
+    rpc: jest.fn(),
   },
 }));
 
@@ -18,6 +19,7 @@ import {
 
 describe('slotService', () => {
   const fromMock = supabase.from as jest.Mock;
+  const rpcMock = supabase.rpc as jest.Mock;
   const getUserMock = supabase.auth.getUser as jest.Mock;
   let consoleErrorSpy: jest.SpyInstance;
 
@@ -135,8 +137,7 @@ describe('slotService', () => {
     });
     const limitExistingBooking = jest.fn(() => ({ maybeSingle: maybeSingleExistingBooking }));
     const eqExistingStatus = jest.fn(() => ({ limit: limitExistingBooking }));
-    const eqExistingSlot = jest.fn(() => ({ eq: eqExistingStatus }));
-    const eqExistingUser = jest.fn(() => ({ eq: eqExistingSlot }));
+    const eqExistingUser = jest.fn(() => ({ eq: eqExistingStatus }));
     const selectExistingBooking = jest.fn(() => ({ eq: eqExistingUser }));
 
     const maybeSingleAnyBooking = jest.fn().mockResolvedValue({
@@ -272,8 +273,7 @@ describe('slotService', () => {
     });
     const limitExistingBooking = jest.fn(() => ({ maybeSingle: maybeSingleExistingBooking }));
     const eqExistingStatus = jest.fn(() => ({ limit: limitExistingBooking }));
-    const eqExistingSlot = jest.fn(() => ({ eq: eqExistingStatus }));
-    const eqExistingUser = jest.fn(() => ({ eq: eqExistingSlot }));
+    const eqExistingUser = jest.fn(() => ({ eq: eqExistingStatus }));
     const selectExistingBooking = jest.fn(() => ({ eq: eqExistingUser }));
 
     const maybeSingleAnyBooking = jest.fn().mockResolvedValue({
@@ -340,8 +340,7 @@ describe('slotService', () => {
     });
     const limitExistingBooking = jest.fn(() => ({ maybeSingle: maybeSingleExistingBooking }));
     const eqExistingStatus = jest.fn(() => ({ limit: limitExistingBooking }));
-    const eqExistingSlot = jest.fn(() => ({ eq: eqExistingStatus }));
-    const eqExistingUser = jest.fn(() => ({ eq: eqExistingSlot }));
+    const eqExistingUser = jest.fn(() => ({ eq: eqExistingStatus }));
     const selectExistingBooking = jest.fn(() => ({ eq: eqExistingUser }));
 
     const maybeSingleAnyBooking = jest.fn().mockResolvedValue({
@@ -417,8 +416,7 @@ describe('slotService', () => {
     });
     const limitExistingBooking = jest.fn(() => ({ maybeSingle: maybeSingleExistingBooking }));
     const eqExistingStatus = jest.fn(() => ({ limit: limitExistingBooking }));
-    const eqExistingSlot = jest.fn(() => ({ eq: eqExistingStatus }));
-    const eqExistingUser = jest.fn(() => ({ eq: eqExistingSlot }));
+    const eqExistingUser = jest.fn(() => ({ eq: eqExistingStatus }));
     const selectExistingBooking = jest.fn(() => ({ eq: eqExistingUser }));
 
     const maybeSingleAnyBooking = jest.fn().mockResolvedValue({
@@ -494,8 +492,8 @@ describe('slotService', () => {
     });
     const limitBooking = jest.fn(() => ({ maybeSingle: maybeSingleBooking }));
     const orderBooking = jest.fn(() => ({ limit: limitBooking }));
-    const eqBookingStatus = jest.fn(() => ({ order: orderBooking }));
-    const eqBookingUser = jest.fn(() => ({ eq: eqBookingStatus }));
+    const inBookingStatus = jest.fn(() => ({ order: orderBooking }));
+    const eqBookingUser = jest.fn(() => ({ in: inBookingStatus }));
     const selectBooking = jest.fn(() => ({ eq: eqBookingUser }));
 
     const maybeSingleGuide = jest.fn().mockResolvedValue({
@@ -561,7 +559,7 @@ describe('slotService', () => {
     });
   });
 
-  it('releases a live booking by cancelling the booking row and reopening the slot', async () => {
+  it('releases a live booking through the release_my_slot RPC', async () => {
     getUserMock.mockResolvedValue({
       data: {
         user: {
@@ -570,51 +568,18 @@ describe('slotService', () => {
       },
     });
 
-    const selectCancelled = jest.fn().mockResolvedValue({
-      data: [{ id: 'booking-1' }],
-      error: null,
-    });
-    const bookingStatusEq = jest.fn(() => ({ select: selectCancelled }));
-    const bookingUserEq = jest.fn(() => ({ eq: bookingStatusEq }));
-    const updateBookingEq = jest.fn(() => ({ eq: bookingUserEq }));
-    const updateBooking = jest.fn(() => ({ eq: updateBookingEq }));
-
-    const reopenSlotFinalEq = jest.fn().mockResolvedValue({ error: null });
-    const reopenSlotFirstEq = jest.fn(() => ({ eq: reopenSlotFinalEq }));
-    const updateSlot = jest.fn(() => ({ eq: reopenSlotFirstEq }));
-
-    let availableSlotsCalled = false;
-
-    fromMock.mockImplementation((table: string) => {
-      if (table === 'bookings') {
-        return { update: updateBooking };
-      }
-
-      if (table === 'available_slots') {
-        availableSlotsCalled = true;
-        return { update: updateSlot };
-      }
-
-      throw new Error(`Unexpected table: ${table}`);
-    });
+    rpcMock.mockResolvedValue({ error: null });
 
     await expect(releaseSlot('slot-1')).resolves.toBeUndefined();
-    expect(updateBooking).toHaveBeenCalledWith(
-      expect.objectContaining({
-        status: 'cancelled',
-        cancel_reason: 'Member rescheduled',
-      }),
-    );
-    expect(availableSlotsCalled).toBe(true);
-    expect(updateSlot).toHaveBeenCalledWith({
-      status: 'open',
-      booked_by: null,
-      booked_at: null,
+    expect(rpcMock).toHaveBeenCalledWith('release_my_slot', {
+      p_slot_id: 'slot-1',
+      p_reason: 'Member cancelled booking',
     });
-    expect(reopenSlotFinalEq).toHaveBeenCalledWith('status', 'booked');
+    expect(fromMock).not.toHaveBeenCalledWith('bookings');
+    expect(fromMock).not.toHaveBeenCalledWith('available_slots');
   });
 
-  it('throws when no confirmed booking was actually cancelled during release', async () => {
+  it('treats missing active booking during release as already released', async () => {
     getUserMock.mockResolvedValue({
       data: {
         user: {
@@ -623,29 +588,22 @@ describe('slotService', () => {
       },
     });
 
-    const selectCancelled = jest.fn().mockResolvedValue({
-      data: [],
-      error: null,
-    });
-    const bookingStatusEq = jest.fn(() => ({ select: selectCancelled }));
-    const bookingUserEq = jest.fn(() => ({ eq: bookingStatusEq }));
-    const updateBookingEq = jest.fn(() => ({ eq: bookingUserEq }));
-    const updateBooking = jest.fn(() => ({ eq: updateBookingEq }));
+    rpcMock.mockResolvedValue({ error: { code: 'P0002' } });
 
-    fromMock.mockImplementation((table: string) => {
-      if (table === 'bookings') {
-        return { update: updateBooking };
-      }
+    await expect(releaseSlot('slot-1')).resolves.toBeUndefined();
+  });
 
-      if (table === 'available_slots') {
-        return { update: jest.fn() };
-      }
-
-      throw new Error(`Unexpected table: ${table}`);
+  it('throws when release_my_slot fails during release', async () => {
+    getUserMock.mockResolvedValue({
+      data: {
+        user: {
+          id: 'user-1',
+        },
+      },
     });
 
-    await expect(releaseSlot('slot-1')).rejects.toThrow(
-      'Your current booking could not be released.',
-    );
+    rpcMock.mockResolvedValue({ error: { code: '42501', message: 'permission denied' } });
+
+    await expect(releaseSlot('slot-1')).rejects.toThrow('Could not release that time.');
   });
 });

@@ -337,43 +337,17 @@ async function releaseSlotInSupabase(slotId: string, reason: string): Promise<vo
     throw new Error('You must be signed in to change your booking.');
   }
 
-  const { data: cancelledBookings, error: bookingError } = await supabase
-    .from('bookings')
-    .update({
-      status: 'cancelled',
-      cancelled_at: new Date().toISOString(),
-      cancel_reason: reason,
-    })
-    .eq('slot_id', slotId)
-    .eq('user_id', user.id)
-    .eq('status', 'confirmed')
-    .select('id');
+  const { error } = await supabase.rpc('release_my_slot', {
+    p_slot_id: slotId,
+    p_reason: reason,
+  });
 
-  if (bookingError) {
-    console.error('Failed to cancel booking:', bookingError);
-    throw new Error('Could not release that time.');
-  }
+  if (error) {
+    if (error.code === 'P0002') {
+      return;
+    }
 
-  if (!cancelledBookings) {
-    throw new Error('Your current booking could not be released.');
-  }
-
-  if (cancelledBookings.length === 0) {
-    throw new Error('Your current booking could not be released.');
-  }
-
-  const { error: slotReopenError } = await supabase
-    .from('available_slots')
-    .update({
-      status: 'open',
-      booked_by: null,
-      booked_at: null,
-    })
-    .eq('id', slotId)
-    .eq('status', 'booked');
-
-  if (slotReopenError) {
-    console.error('Failed to reopen slot after cancellation:', slotReopenError);
+    console.error('release_my_slot failed:', error);
     throw new Error('Could not release that time.');
   }
 }

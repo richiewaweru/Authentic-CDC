@@ -25,6 +25,7 @@ import { PendingHomeScreen } from '../src/screens/booking/PendingHomeScreen';
 
 const mockRescheduleBooking = jest.fn();
 const mockSignOut = jest.fn();
+const mockClearBooking = jest.fn();
 let mockStoreState = {
   user: {
     displayName: 'Ada Member',
@@ -53,11 +54,16 @@ let mockStoreState = {
     },
   },
   rescheduleBooking: mockRescheduleBooking,
+  clearBooking: mockClearBooking,
   signOut: mockSignOut,
 };
 
 jest.mock('../src/stores/authStore', () => ({
   useAuthStore: (selector: (state: typeof mockStoreState) => unknown) => selector(mockStoreState),
+}));
+
+jest.mock('../src/services/slotService', () => ({
+  releaseSlot: jest.fn(),
 }));
 
 describe('booking screens', () => {
@@ -66,6 +72,7 @@ describe('booking screens', () => {
     jest.setSystemTime(new Date('2026-06-19T20:00:00.000Z'));
     mockRescheduleBooking.mockReset();
     mockSignOut.mockReset();
+    mockClearBooking.mockReset();
     jest.spyOn(Linking, 'canOpenURL').mockResolvedValue(true);
     jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
     mockStoreState = {
@@ -74,6 +81,7 @@ describe('booking screens', () => {
         ...mockStoreState.confirmedBooking,
         meetingLink: null,
         startsAt: null,
+        status: 'confirmed',
         slot: {
           ...mockStoreState.confirmedBooking.slot,
           date: '2026-06-20',
@@ -191,6 +199,36 @@ describe('booking screens', () => {
     expect(queryByText('Join Conversation')).toBeNull();
     expect(queryByText('Change Time')).toBeNull();
     expect(queryByText('Cancel Booking')).toBeNull();
+  });
+
+  it('routes a past unfinished booking to choose a new time without release actions', () => {
+    const navigate = jest.fn();
+    mockStoreState = {
+      ...mockStoreState,
+      confirmedBooking: {
+        ...mockStoreState.confirmedBooking,
+        startsAt: '2026-06-19T17:30:00.000Z',
+        meetingLink: 'https://meet.example.com/abc',
+      },
+    };
+
+    const { getByText, queryByText } = render(
+      <PendingHomeScreen
+        navigation={{ goBack: jest.fn(), navigate } as never}
+        route={{ key: 'PendingHome-test', name: 'PendingHome' } as never}
+      />,
+    );
+
+    expect(getByText('Your conversation time has passed')).toBeTruthy();
+    expect(queryByText('Change Time')).toBeNull();
+    expect(queryByText('Cancel Booking')).toBeNull();
+    expect(queryByText('Join Conversation')).toBeNull();
+
+    fireEvent.press(getByText('Pick a New Time'));
+
+    expect(mockClearBooking).toHaveBeenCalledTimes(1);
+    expect(mockRescheduleBooking).not.toHaveBeenCalled();
+    expect(navigate).toHaveBeenCalledWith('ChooseSlot');
   });
 
   it('uses startsAt when creating the Google Calendar URL', async () => {

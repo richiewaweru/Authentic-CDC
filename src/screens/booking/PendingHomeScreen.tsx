@@ -44,6 +44,9 @@ export function PendingHomeScreen({ navigation }: Props) {
     userState === 'conversation_complete' ||
     userState === 'conversation_approved' ||
     booking?.status === 'completed';
+  const gracedPast =
+    startsAt instanceof Date && startsAt.getTime() < Date.now() - 2 * 60 * 60 * 1000;
+  const isPastUnfinished = gracedPast && !isCompleted;
 
   const handleReschedule = async () => {
     const confirmed = await confirmDialog({
@@ -127,6 +130,11 @@ export function PendingHomeScreen({ navigation }: Props) {
         },
       ],
     );
+  };
+
+  const handlePastBookingRebook = () => {
+    clearBooking();
+    navigation.navigate('ChooseSlot');
   };
 
   if (!booking) {
@@ -254,6 +262,15 @@ export function PendingHomeScreen({ navigation }: Props) {
                 conversation. You will receive community access soon — keep an eye on your email
                 for next steps.
               </Text>
+            </View>
+          ) : isPastUnfinished ? (
+            <View style={styles.pastBookingCard}>
+              <Ionicons color={colors.goldDark} name="calendar-outline" size={24} />
+              <Text style={styles.pastBookingHeadline}>Your conversation time has passed</Text>
+              <Text style={styles.pastBookingBody}>
+                Pick a new Alignment Conversation time to continue toward Community Access.
+              </Text>
+              <Button onPress={handlePastBookingRebook} title="Pick a New Time" />
             </View>
           ) : (
             <>
@@ -403,6 +420,20 @@ const styles = StyleSheet.create({
   completedBody: {
     ...typography.bodyMd,
     color: colors.onSurface,
+    textAlign: 'center',
+  },
+  pastBookingCard: {
+    gap: spacing.md,
+    alignItems: 'center',
+  },
+  pastBookingHeadline: {
+    ...typography.headlineMd,
+    color: colors.primaryDark,
+    textAlign: 'center',
+  },
+  pastBookingBody: {
+    ...typography.bodyMd,
+    color: colors.onSurfaceVariant,
     textAlign: 'center',
   },
   urgentBanner: {
