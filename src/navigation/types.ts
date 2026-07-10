@@ -1,6 +1,8 @@
 export type AuthStackParamList = {
   Welcome: undefined;
   Auth: { mode?: 'join' | 'signIn' } | undefined;
+  CheckYourEmail: { email: string };
+  ConfirmEmail: { token_hash?: string; type?: string; email?: string };
 };
 
 export type OnboardingStackParamList = {

@@ -7,6 +7,15 @@ jest.mock('../src/services/nativeGoogleAuth', () => ({
   signInWithNativeGoogle: jest.fn(),
 }));
 
+jest.mock('../src/config/supabase', () => ({
+  supabase: {
+    auth: {
+      onAuthStateChange: jest.fn(),
+      signOut: jest.fn(),
+    },
+  },
+}));
+
 import { getInitialBookingRoute } from '../src/navigation/RootNavigator';
 
 describe('booking lifecycle navigation', () => {

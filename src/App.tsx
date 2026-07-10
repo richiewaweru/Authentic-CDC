@@ -1,6 +1,6 @@
 import React from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
-import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme, type LinkingOptions } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import * as WebBrowser from 'expo-web-browser';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -24,6 +24,7 @@ import { registerForPushNotifications } from './services/pushNotificationService
 import { fetchConfirmedBookingForCurrentUser } from './services/slotService';
 import { useAuthStore } from './stores/authStore';
 import { colors } from './theme';
+import type { AuthStackParamList } from './navigation/types';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -36,6 +37,18 @@ const navigationTheme = {
     text: colors.onSurface,
     border: colors.outlineVariant,
     primary: colors.primary,
+  },
+};
+
+const linking: LinkingOptions<AuthStackParamList> = {
+  prefixes: ['https://app.authenticcdc.com', 'http://localhost:8081', 'http://localhost:19006'],
+  config: {
+    screens: {
+      Welcome: '',
+      Auth: 'sign-in',
+      CheckYourEmail: 'check-your-email',
+      ConfirmEmail: 'auth/confirm',
+    },
   },
 };
 
@@ -157,7 +170,7 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <ErrorBoundary>
-        <NavigationContainer theme={navigationTheme}>
+        <NavigationContainer linking={linking} theme={navigationTheme}>
           <StatusBar style="dark" />
           <RootNavigator />
         </NavigationContainer>

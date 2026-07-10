@@ -62,20 +62,7 @@ export function AuthScreen({ navigation, route }: Props) {
           : await authService.signUpWithEmail(email.trim(), password);
 
       if (result.needsEmailConfirmation) {
-        Alert.alert(
-          'Check your inbox',
-          'We sent a confirmation link to your email. After confirming, come back here and tap Sign In.',
-          [
-            {
-              text: 'OK',
-              onPress: () => {
-                setEmail('');
-                setPassword('');
-                navigation.replace('Auth', { mode: 'signIn' });
-              },
-            },
-          ],
-        );
+        navigation.navigate('CheckYourEmail', { email: email.trim() });
         return;
       } else if (!result.session) {
         Alert.alert(
@@ -84,6 +71,13 @@ export function AuthScreen({ navigation, route }: Props) {
         );
       }
     } catch (error) {
+      const message = error instanceof Error ? error.message : '';
+
+      if (mode === 'signIn' && message.toLowerCase().includes('email not confirmed')) {
+        navigation.navigate('CheckYourEmail', { email: email.trim() });
+        return;
+      }
+
       console.error('Email authentication failed:', error);
       Alert.alert(
         mode === 'signIn' ? 'Could not sign you in' : 'Could not create your account',

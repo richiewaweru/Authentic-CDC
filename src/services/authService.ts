@@ -244,6 +244,7 @@ export const authService = {
       email,
       password,
       options: {
+        emailRedirectTo: 'https://app.authenticcdc.com/auth/confirm',
         data: {
           display_name: buildDisplayNameFromEmail(email),
         },
@@ -252,10 +253,6 @@ export const authService = {
 
     if (error) {
       throw error;
-    }
-
-    if (data.user?.email) {
-      void fireWelcomeEmail(data.user.email);
     }
 
     return {
@@ -280,6 +277,17 @@ export const authService = {
       user: data.user,
       needsEmailConfirmation: false,
     };
+  },
+
+  async resendSignupConfirmation(email: string) {
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email,
+    });
+
+    if (error) {
+      throw error;
+    }
   },
 
   async signInWithGoogle() {

@@ -2,6 +2,7 @@ jest.spyOn(console, 'warn').mockImplementation(() => {});
 
 const mockBuildDisplayNameFromEmail = jest.fn((email: string) => email.split('@')[0]);
 const mockSignUp = jest.fn();
+const mockResend = jest.fn();
 const mockExchangeCodeForSession = jest.fn();
 const mockFromMaybeSingle = jest.fn();
 const mockFromEq = jest.fn(() => ({ single: mockFromMaybeSingle }));
@@ -40,6 +41,7 @@ jest.mock('../src/config/supabase', () => ({
       signInWithPassword: jest.fn(),
       signOut: jest.fn(),
       signUp: (options: unknown) => mockSignUp(options),
+      resend: (...args: unknown[]) => mockResend(...args),
     },
     from: (table: string) => mockFrom(table),
     functions: {
@@ -81,7 +83,7 @@ describe('authService email hooks', () => {
     mockInvoke.mockResolvedValue({ data: null, error: null });
   });
 
-  it('fires the welcome email after email signup without blocking the result', async () => {
+  it('returns email confirmation state after signup without sending the welcome email', async () => {
     mockSignUp.mockResolvedValue({
       data: {
         session: null,
@@ -94,6 +96,17 @@ describe('authService email hooks', () => {
 
     const result = await authService.signUpWithEmail('new.member@example.com', 'password123');
 
+    expect(mockSignUp).toHaveBeenCalledWith({
+      email: 'new.member@example.com',
+      password: 'password123',
+      options: {
+        emailRedirectTo: 'https://app.authenticcdc.com/auth/confirm',
+        data: {
+          display_name: 'new.member',
+        },
+      },
+    });
+
     expect(result).toEqual({
       session: null,
       user: {
@@ -104,12 +117,20 @@ describe('authService email hooks', () => {
 
     await Promise.resolve();
 
-    expect(mockInvoke).toHaveBeenCalledWith('send-member-email', {
-      body: {
-        type: 'welcome',
-        userEmail: 'new.member@example.com',
-        firstName: 'new.member',
-      },
+    expect(mockInvoke).not.toHaveBeenCalled();
+  });
+
+  it('resends signup confirmations', async () => {
+    mockResend.mockResolvedValue({
+      data: {},
+      error: null,
+    });
+
+    await authService.resendSignupConfirmation('new.member@example.com');
+
+    expect(mockResend).toHaveBeenCalledWith({
+      type: 'signup',
+      email: 'new.member@example.com',
     });
   });
 

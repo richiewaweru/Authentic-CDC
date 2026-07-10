@@ -6,6 +6,8 @@ import { colors } from '../theme';
 import { useAuthStore } from '../stores/authStore';
 import { WelcomeScreen } from '../screens/auth/WelcomeScreen';
 import { AuthScreen } from '../screens/auth/AuthScreen';
+import { CheckYourEmailScreen } from '../screens/auth/CheckYourEmailScreen';
+import { ConfirmEmailScreen } from '../screens/auth/ConfirmEmailScreen';
 import { OnboardingFlow } from '../screens/onboarding/OnboardingFlow';
 import { ProfileReadyScreen } from '../screens/booking/ProfileReadyScreen';
 import { ConversationInfoScreen } from '../screens/booking/ConversationInfoScreen';
@@ -55,6 +57,8 @@ function AuthNavigator() {
     <AuthStack.Navigator screenOptions={{ headerShown: false }}>
       <AuthStack.Screen component={WelcomeScreen} name="Welcome" />
       <AuthStack.Screen component={AuthScreen} name="Auth" />
+      <AuthStack.Screen component={CheckYourEmailScreen} name="CheckYourEmail" />
+      <AuthStack.Screen component={ConfirmEmailScreen} name="ConfirmEmail" />
     </AuthStack.Navigator>
   );
 }
