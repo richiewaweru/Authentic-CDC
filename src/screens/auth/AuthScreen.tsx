@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { ScreenLayout } from '../../components/layout';
+import { AgreementFooter } from '../../components/auth/AgreementFooter';
 import { Button } from '../../components/ui/Button';
 import { ScreenHeader } from '../../components/ui/ScreenHeader';
 import { AuthStackParamList } from '../../navigation/types';
@@ -91,9 +92,10 @@ export function AuthScreen({ navigation, route }: Props) {
   return (
     <ScreenLayout
       footer={
-        <Text style={styles.footer}>
-          BY CONTINUING, YOU AGREE TO OUR TERMS OF SERVICE & PRIVACY POLICY
-        </Text>
+        <AgreementFooter
+          onCommunityValuesPress={() => navigation.navigate('LegalCommunityValues')}
+          onStewardshipPress={() => navigation.navigate('LegalStewardship')}
+        />
       }
       header={<ScreenHeader onBack={() => navigation.goBack()} stepLabel="Account Setup" />}
     >
@@ -260,10 +262,5 @@ const styles = StyleSheet.create({
   linkBold: {
     color: colors.primaryDark,
     fontFamily: 'Inter_600SemiBold',
-  },
-  footer: {
-    ...typography.labelSm,
-    color: colors.outline,
-    textAlign: 'center',
   },
 });

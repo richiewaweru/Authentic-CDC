@@ -63,6 +63,7 @@ import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { AuthScreen } from '../src/screens/auth/AuthScreen';
 import { CheckYourEmailScreen } from '../src/screens/auth/CheckYourEmailScreen';
 import { ConfirmEmailScreen } from '../src/screens/auth/ConfirmEmailScreen';
+import { LegalScreen } from '../src/screens/auth/LegalScreen';
 import { WelcomeScreen } from '../src/screens/auth/WelcomeScreen';
 
 describe('auth entry screens', () => {
@@ -83,7 +84,7 @@ describe('auth entry screens', () => {
   });
 
   it('renders the Authentic logo on the welcome screen', () => {
-    const { getByLabelText } = render(
+    const { getByLabelText, queryByText } = render(
       <WelcomeScreen
         navigation={{ navigate: jest.fn() } as never}
         route={{ key: 'Welcome-test', name: 'Welcome' } as never}
@@ -91,6 +92,8 @@ describe('auth entry screens', () => {
     );
 
     expect(getByLabelText('Authentic logo')).toBeTruthy();
+    expect(queryByText('1')).toBeNull();
+    expect(queryByText('9')).toBeNull();
   });
 
   it('renders the Authentic logo on the auth screen', () => {
@@ -102,6 +105,75 @@ describe('auth entry screens', () => {
     );
 
     expect(getByLabelText('Authentic logo')).toBeTruthy();
+  });
+
+  it('navigates to legal screens from the welcome agreement links', () => {
+    const navigation = {
+      navigate: jest.fn(),
+    };
+
+    const { getByText } = render(
+      <WelcomeScreen
+        navigation={navigation as never}
+        route={{ key: 'Welcome-test', name: 'Welcome' } as never}
+      />,
+    );
+
+    fireEvent.press(getByText('terms of stewardship'));
+    fireEvent.press(getByText('community values'));
+
+    expect(navigation.navigate).toHaveBeenCalledWith('LegalStewardship');
+    expect(navigation.navigate).toHaveBeenCalledWith('LegalCommunityValues');
+  });
+
+  it('navigates to legal screens from the auth agreement links', () => {
+    const navigation = {
+      goBack: jest.fn(),
+      navigate: jest.fn(),
+      replace: jest.fn(),
+    };
+
+    const { getByText } = render(
+      <AuthScreen
+        navigation={navigation as never}
+        route={{ key: 'Auth-test', name: 'Auth', params: { mode: 'join' } } as never}
+      />,
+    );
+
+    fireEvent.press(getByText('terms of stewardship'));
+    fireEvent.press(getByText('community values'));
+
+    expect(navigation.navigate).toHaveBeenCalledWith('LegalStewardship');
+    expect(navigation.navigate).toHaveBeenCalledWith('LegalCommunityValues');
+  });
+
+  it('renders the placeholder legal documents', () => {
+    const navigation = {
+      goBack: jest.fn(),
+    };
+    const placeholder =
+      'This document is being prepared. It will be published before public launch. If you have questions in the meantime, contact support@authenticcdc.com.';
+
+    const stewardship = render(
+      <LegalScreen
+        navigation={navigation as never}
+        route={{ key: 'LegalStewardship-test', name: 'LegalStewardship' } as never}
+      />,
+    );
+
+    expect(stewardship.getAllByText('Terms of Stewardship').length).toBeGreaterThan(0);
+    expect(stewardship.getByText(placeholder)).toBeTruthy();
+    stewardship.unmount();
+
+    const communityValues = render(
+      <LegalScreen
+        navigation={navigation as never}
+        route={{ key: 'LegalCommunityValues-test', name: 'LegalCommunityValues' } as never}
+      />,
+    );
+
+    expect(communityValues.getAllByText('Community Values').length).toBeGreaterThan(0);
+    expect(communityValues.getByText(placeholder)).toBeTruthy();
   });
 
   it('routes to check your email after signup requires confirmation', async () => {

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Alert, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { ScreenLayout } from '../../components/layout';
@@ -14,7 +14,7 @@ import { supabase } from '../../config/supabase';
 import { bookSlot } from '../../services/slotService';
 import { useAuthStore } from '../../stores/authStore';
 import { colors, spacing, typography } from '../../theme';
-import { showErrorDialog, showInfoDialog } from '../../utils/dialogs';
+import { confirmDialog, showErrorDialog, showInfoDialog } from '../../utils/dialogs';
 import { addMinutesToTime, formatSlotDate, formatSlotTime, timeTo24Hour } from '../../utils/date';
 
 type Props = NativeStackScreenProps<BookingStackParamList, 'ConfirmBooking'>;
@@ -82,75 +82,73 @@ export function ConfirmBookingScreen({ navigation }: Props) {
     const formattedDate = formatSlotDate(selection.slot.date);
     const formattedTime = formatSlotTime(selection.slot.time);
 
-    Alert.alert(
-      'Confirm Booking',
-      `Book your Alignment Conversation with ${selection.guide.name} on ${formattedDate} at ${formattedTime}?`,
-      [
-        { text: 'Go Back', style: 'cancel' },
-        {
-          text: 'Confirm',
-          onPress: () => {
-            setLoading(true);
-            void (async () => {
-              try {
-                const { bookingId, meetingLink, startsAt } = await bookSlot(selection.slot.id);
+    const confirmed = await confirmDialog({
+      title: 'Confirm Booking',
+      message: `Book your Alignment Conversation with ${selection.guide.name} on ${formattedDate} at ${formattedTime}?`,
+      confirmText: 'Confirm',
+      cancelText: 'Go Back',
+    });
 
-                confirmBooking({
-                  ...selection,
-                  bookingId,
-                  slotId: selection.slot.id,
-                  meetingLink,
-                  startsAt,
-                  endTime: addMinutesToTime(selection.slot.time, selection.slot.durationMinutes),
-                  status: 'confirmed',
-                });
+    if (!confirmed) {
+      return;
+    }
 
-                const fireConfirmationEmail = async () => {
-                  if (!EMAIL_TRIGGERS_ENABLED) {
-                    return;
-                  }
+    setLoading(true);
 
-                  try {
-                    await supabase.functions.invoke('send-booking-confirmation', {
-                      body: {
-                        bookingId,
-                        userEmail: user?.email ?? '',
-                        userFirstName:
-                          user?.displayName?.split(' ')[0] ?? user?.email?.split('@')[0] ?? 'there',
-                        guideName: selection.guide.name,
-                        guideTitle: selection.guide.title || 'Community Guide',
-                        slotDate: formatDateForEmail(selection.slot.date),
-                        slotTime: formatTimeForEmail(selection.slot.time),
-                        durationMinutes: selection.slot.durationMinutes ?? 30,
-                        calendarUrl: buildGoogleCalendarUrl({
-                          guideName: selection.guide.name,
-                          slotDate: selection.slot.date,
-                          slotTime: selection.slot.time,
-                          durationMinutes: selection.slot.durationMinutes ?? 30,
-                        }),
-                      },
-                    });
-                  } catch (error) {
-                    console.warn('[Email] Booking confirmation failed:', error);
-                  }
-                };
-                void fireConfirmationEmail();
+    try {
+      const { bookingId, meetingLink, startsAt } = await bookSlot(selection.slot.id);
 
-                navigation.navigate('BookingConfirmed');
-              } catch (error) {
-                console.error('Booking confirmation failed:', error);
-                showErrorDialog(
-                  'Could not confirm your booking',
-                  error instanceof Error ? error.message : 'Please try again.',
-                );
-              } finally {
-                setLoading(false);
-              }
-            })();
-          },
-        },
-      ],
-    );
+      confirmBooking({
+        ...selection,
+        bookingId,
+        slotId: selection.slot.id,
+        meetingLink,
+        startsAt,
+        endTime: addMinutesToTime(selection.slot.time, selection.slot.durationMinutes),
+        status: 'confirmed',
+      });
+
+      const fireConfirmationEmail = async () => {
+        if (!EMAIL_TRIGGERS_ENABLED) {
+          return;
+        }
+
+        try {
+          await supabase.functions.invoke('send-booking-confirmation', {
+            body: {
+              bookingId,
+              userEmail: user?.email ?? '',
+              userFirstName:
+                user?.displayName?.split(' ')[0] ?? user?.email?.split('@')[0] ?? 'there',
+              guideName: selection.guide.name,
+              guideTitle: selection.guide.title || 'Community Guide',
+              slotDate: formatDateForEmail(selection.slot.date),
+              slotTime: formatTimeForEmail(selection.slot.time),
+              durationMinutes: selection.slot.durationMinutes ?? 30,
+              calendarUrl: buildGoogleCalendarUrl({
+                guideName: selection.guide.name,
+                slotDate: selection.slot.date,
+                slotTime: selection.slot.time,
+                durationMinutes: selection.slot.durationMinutes ?? 30,
+              }),
+            },
+          });
+        } catch (error) {
+          console.warn('[Email] Booking confirmation failed:', error);
+        }
+      };
+      void fireConfirmationEmail();
+
+      navigation.navigate('BookingConfirmed');
+    } catch (error) {
+      console.error('Booking confirmation failed:', error);
+      showErrorDialog(
+        'Could not confirm your booking',
+        error instanceof Error ? error.message : 'Please try again.',
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!selection) {

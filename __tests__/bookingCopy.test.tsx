@@ -202,6 +202,7 @@ describe('booking copy updates', () => {
   });
 
   it('fires the booking confirmation email with calendarUrl after a confirmed booking', async () => {
+    const navigate = jest.fn();
     mockStoreState.bookingSelection = {
       guide: mockGuides[0],
       slot: {
@@ -214,7 +215,7 @@ describe('booking copy updates', () => {
 
     render(
       <ConfirmBookingScreen
-        navigation={{ goBack: jest.fn(), navigate: jest.fn() } as never}
+        navigation={{ goBack: jest.fn(), navigate } as never}
         route={{ key: 'ConfirmBooking-test', name: 'ConfirmBooking' } as never}
       />,
     );
@@ -241,6 +242,70 @@ describe('booking copy updates', () => {
           }),
         }),
       );
+      expect(mockStoreState.confirmBooking).toHaveBeenCalledWith(
+        expect.objectContaining({
+          bookingId: 'booking-1',
+          slotId: mockStoreState.bookingSelection.slot.id,
+          status: 'confirmed',
+        }),
+      );
+      expect(navigate).toHaveBeenCalledWith('BookingConfirmed');
+    });
+  });
+
+  it('navigates to confirmed booking even when the confirmation email fails', async () => {
+    const navigate = jest.fn();
+    mockInvoke.mockRejectedValue(new Error('email service unavailable'));
+    mockStoreState.bookingSelection = {
+      guide: mockGuides[0],
+      slot: mockSlots[0],
+    };
+
+    render(
+      <ConfirmBookingScreen
+        navigation={{ goBack: jest.fn(), navigate } as never}
+        route={{ key: 'ConfirmBooking-test', name: 'ConfirmBooking' } as never}
+      />,
+    );
+
+    fireEvent.press(require('@testing-library/react-native').screen.getByText('Confirm Booking'));
+
+    const confirmButtons = alertSpy.mock.calls[0]?.[2];
+    await confirmButtons?.[1]?.onPress?.();
+
+    await waitFor(() => {
+      expect(mockStoreState.confirmBooking).toHaveBeenCalledTimes(1);
+      expect(navigate).toHaveBeenCalledWith('BookingConfirmed');
+    });
+  });
+
+  it('shows an error and does not navigate when booking creation fails', async () => {
+    const navigate = jest.fn();
+    mockBookSlot.mockRejectedValue(new Error('RLS rejected the booking insert'));
+    mockStoreState.bookingSelection = {
+      guide: mockGuides[0],
+      slot: mockSlots[0],
+    };
+
+    render(
+      <ConfirmBookingScreen
+        navigation={{ goBack: jest.fn(), navigate } as never}
+        route={{ key: 'ConfirmBooking-test', name: 'ConfirmBooking' } as never}
+      />,
+    );
+
+    fireEvent.press(require('@testing-library/react-native').screen.getByText('Confirm Booking'));
+
+    const confirmButtons = alertSpy.mock.calls[0]?.[2];
+    await confirmButtons?.[1]?.onPress?.();
+
+    await waitFor(() => {
+      expect(alertSpy).toHaveBeenCalledWith(
+        'Could not confirm your booking',
+        'RLS rejected the booking insert',
+        undefined,
+      );
+      expect(navigate).not.toHaveBeenCalledWith('BookingConfirmed');
     });
   });
 });

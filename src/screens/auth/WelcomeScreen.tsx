@@ -3,9 +3,9 @@ import { Image, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { ScreenLayout } from '../../components/layout';
+import { AgreementFooter } from '../../components/auth/AgreementFooter';
 import { Button } from '../../components/ui/Button';
 import { GradientHero } from '../../components/ui/GradientHero';
-import { JourneyPath } from '../../components/ui/JourneyPath';
 import { SymbolicIcon } from '../../components/ui/SymbolicIcon';
 import { colors, spacing, typography } from '../../theme';
 import { AuthStackParamList } from '../../navigation/types';
@@ -24,9 +24,10 @@ export function WelcomeScreen({ navigation }: Props) {
             onPress={() => navigation.navigate('Auth', { mode: 'signIn' })}
             variant="outlined"
           />
-          <Text style={styles.footnote}>
-            By joining, you agree to our terms of stewardship and community values.
-          </Text>
+          <AgreementFooter
+            onCommunityValuesPress={() => navigation.navigate('LegalCommunityValues')}
+            onStewardshipPress={() => navigation.navigate('LegalStewardship')}
+          />
         </>
       }
       scrollContentStyle={styles.scrollContent}
@@ -39,8 +40,6 @@ export function WelcomeScreen({ navigation }: Props) {
           style={styles.logo}
         />
       </View>
-
-      <JourneyPath currentStep={0} totalSteps={9} label="Welcome" />
 
       <GradientHero style={styles.hero}>
         <Text style={styles.eyebrow}>Alignment Profile</Text>
@@ -106,11 +105,6 @@ const styles = StyleSheet.create({
   bullet: {
     ...typography.labelMd,
     color: colors.primaryDark,
-    textAlign: 'center',
-  },
-  footnote: {
-    ...typography.labelSm,
-    color: colors.outline,
     textAlign: 'center',
   },
 });
