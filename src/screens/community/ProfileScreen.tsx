@@ -17,6 +17,7 @@ import {
 } from '../../services/communityService';
 import { useAuthStore } from '../../stores/authStore';
 import { colors, spacing, typography } from '../../theme';
+import { communityStyles } from './communityStyles';
 
 interface Props {
   navigation: CompositeNavigationProp<
@@ -75,42 +76,44 @@ export function ProfileScreen({ navigation }: Props) {
     <ScreenLayout
       keyboardAvoiding={false}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.primary} />}
-      scrollContentStyle={styles.content}
+      scrollContentStyle={communityStyles.content}
     >
-      <View style={styles.header}>
-        <Text style={styles.eyebrow}>Community</Text>
-        <Text style={styles.headline}>Profile</Text>
+      <View style={communityStyles.header}>
+        <Text style={communityStyles.eyebrow}>Community</Text>
+        <Text style={communityStyles.headline}>Profile</Text>
       </View>
 
       {loading ? <ActivityIndicator color={colors.primary} /> : null}
-      {error ? <Text style={styles.error}>{error}</Text> : null}
+      {error ? <Text style={communityStyles.error}>{error}</Text> : null}
 
       {profile ? (
-        <Card style={styles.card}>
-          <Avatar name={profile.displayName ?? 'Member'} src={profile.avatarUrl} />
-          <View style={styles.profileText}>
-            <Text style={styles.cardTitle}>{profile.displayName ?? 'Community Member'}</Text>
-            {profile.cityState ? <Text style={styles.cardBody}>{profile.cityState}</Text> : null}
-            {profile.bio ? <Text style={styles.cardBody}>{profile.bio}</Text> : null}
+        <Card style={styles.profileCard}>
+          <View style={styles.profileHeader}>
+            <Avatar name={profile.displayName ?? 'Member'} src={profile.avatarUrl} />
+            <View style={styles.profileText}>
+              <Text style={communityStyles.cardTitle}>{profile.displayName ?? 'Community Member'}</Text>
+              {profile.cityState ? <Text style={communityStyles.cardBody}>{profile.cityState}</Text> : null}
+              {profile.bio ? <Text style={communityStyles.cardBody}>{profile.bio}</Text> : null}
+            </View>
           </View>
           <Button title="Edit profile" variant="outlined" onPress={() => navigation.navigate('EditProfile')} />
         </Card>
       ) : null}
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Your Guide</Text>
+      <View style={communityStyles.section}>
+        <Text style={communityStyles.sectionTitle}>Your Guide</Text>
         {guides.length === 0 ? (
-          <Card style={styles.emptyCard}>
-            <Text style={styles.cardBody}>Your active guide details will appear here soon.</Text>
+          <Card style={communityStyles.emptyCard}>
+            <Text style={communityStyles.cardBody}>Your active guide details will appear here soon.</Text>
           </Card>
         ) : (
           guides.map((guide) => (
             <Card key={guide.id} style={styles.guideCard}>
               <Avatar initials={guide.initials} name={guide.name} src={guide.avatarUrl} />
               <View style={styles.profileText}>
-                <Text style={styles.cardTitle}>{guide.name}</Text>
-                <Text style={styles.cardBody}>{guide.title}</Text>
-                {guide.bio ? <Text style={styles.cardBody}>{guide.bio}</Text> : null}
+                <Text style={communityStyles.cardTitle}>{guide.name}</Text>
+                <Text style={communityStyles.cardBody}>{guide.title}</Text>
+                {guide.bio ? <Text style={communityStyles.cardBody}>{guide.bio}</Text> : null}
               </View>
             </Card>
           ))
@@ -155,31 +158,14 @@ function buildInitials(name: string) {
 }
 
 const styles = StyleSheet.create({
-  content: {
-    gap: spacing.lg,
-  },
-  header: {
-    gap: spacing.xs,
-  },
-  eyebrow: {
-    ...typography.eyebrow,
-    color: colors.goldDark,
-  },
-  headline: {
-    ...typography.headlineLg,
-    color: colors.primaryDark,
-  },
-  section: {
-    gap: spacing.md,
-  },
-  sectionTitle: {
-    ...typography.headlineMd,
-    color: colors.primaryDark,
-  },
-  card: {
+  profileCard: {
     padding: spacing.lg,
     gap: spacing.md,
-    alignItems: 'center',
+  },
+  profileHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.md,
   },
   guideCard: {
     padding: spacing.md,
@@ -187,32 +173,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
   },
-  emptyCard: {
-    padding: spacing.md,
-  },
   profileText: {
     flex: 1,
+    flexShrink: 1,
     gap: spacing.xs,
-  },
-  cardTitle: {
-    ...typography.bodyMd,
-    color: colors.primaryDark,
-    fontFamily: 'Inter_600SemiBold',
-  },
-  cardBody: {
-    ...typography.bodySm,
-    color: colors.onSurfaceVariant,
+    minWidth: 0,
   },
   avatar: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     backgroundColor: colors.surfaceContainer,
   },
   avatarFallback: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     backgroundColor: colors.primaryContainer,
     alignItems: 'center',
     justifyContent: 'center',
@@ -220,9 +196,5 @@ const styles = StyleSheet.create({
   avatarText: {
     ...typography.labelMd,
     color: colors.primaryDark,
-  },
-  error: {
-    ...typography.bodySm,
-    color: colors.error,
   },
 });

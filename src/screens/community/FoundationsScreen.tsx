@@ -11,6 +11,7 @@ import { ProgressBar } from '../../components/ui/ProgressBar';
 import { CommunityStackParamList, CommunityTabParamList } from '../../navigation/types';
 import { getReadings, Reading, ReadingCategory } from '../../services/communityService';
 import { colors, spacing, typography } from '../../theme';
+import { communityStyles } from './communityStyles';
 
 const CATEGORIES: Array<ReadingCategory | 'All'> = ['All', 'Faith', 'Relationships', 'Community', 'General'];
 
@@ -55,11 +56,11 @@ export function FoundationsScreen({ navigation }: Props) {
     <ScreenLayout
       keyboardAvoiding={false}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.primary} />}
-      scrollContentStyle={styles.content}
+      scrollContentStyle={communityStyles.content}
     >
-      <View style={styles.header}>
-        <Text style={styles.eyebrow}>Community</Text>
-        <Text style={styles.headline}>Foundations</Text>
+      <View style={communityStyles.header}>
+        <Text style={communityStyles.eyebrow}>Community</Text>
+        <Text style={communityStyles.headline}>Foundations</Text>
       </View>
 
       <GradientHero variant="sand" style={styles.progressHero}>
@@ -84,12 +85,12 @@ export function FoundationsScreen({ navigation }: Props) {
       </ScrollView>
 
       {loading ? <ActivityIndicator color={colors.primary} /> : null}
-      {error ? <Text style={styles.error}>{error}</Text> : null}
+      {error ? <Text style={communityStyles.error}>{error}</Text> : null}
 
       {!loading && readings.length === 0 ? (
-        <Card style={styles.emptyCard}>
-          <Text style={styles.cardTitle}>No readings yet</Text>
-          <Text style={styles.cardBody}>Published Foundation pieces will appear here.</Text>
+        <Card style={communityStyles.emptyCard}>
+          <Text style={communityStyles.cardTitle}>No readings yet</Text>
+          <Text style={communityStyles.cardBody}>Published Foundation pieces will appear here.</Text>
         </Card>
       ) : null}
 
@@ -101,8 +102,8 @@ export function FoundationsScreen({ navigation }: Props) {
         >
           <Card style={styles.card}>
             <Text style={styles.badge}>{reading.category}</Text>
-            <Text style={styles.cardTitle}>{reading.title}</Text>
-            <Text style={styles.cardBody}>{preview(reading.body)}</Text>
+            <Text style={communityStyles.cardTitle}>{reading.title}</Text>
+            <Text style={communityStyles.cardBody}>{preview(reading.body)}</Text>
             <Text style={styles.date}>{formatDate(reading.publishedAt ?? reading.createdAt)}</Text>
           </Card>
         </TouchableOpacity>
@@ -128,15 +129,10 @@ function formatDate(value: string) {
 }
 
 const styles = StyleSheet.create({
-  content: {
-    gap: spacing.lg,
-  },
-  header: {
-    gap: spacing.xs,
-  },
   progressHero: {
-    minHeight: 136,
+    minHeight: 128,
     gap: spacing.sm,
+    padding: spacing.lg,
   },
   progressHeader: {
     flexDirection: 'row',
@@ -158,18 +154,10 @@ const styles = StyleSheet.create({
     ...typography.labelSm,
     color: colors.goldDark,
   },
-  eyebrow: {
-    ...typography.labelSm,
-    color: colors.goldDark,
-    textTransform: 'uppercase',
-  },
-  headline: {
-    ...typography.headlineLg,
-    color: colors.primaryDark,
-  },
   chips: {
     gap: spacing.sm,
     paddingRight: spacing.lg,
+    paddingVertical: 2,
   },
   chip: {
     borderRadius: 999,
@@ -194,29 +182,12 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     gap: spacing.sm,
   },
-  emptyCard: {
-    padding: spacing.md,
-    gap: spacing.sm,
-  },
   badge: {
     ...typography.labelSm,
     color: colors.goldDark,
   },
-  cardTitle: {
-    ...typography.bodyMd,
-    color: colors.primaryDark,
-    fontFamily: 'Inter_600SemiBold',
-  },
-  cardBody: {
-    ...typography.bodySm,
-    color: colors.onSurfaceVariant,
-  },
   date: {
     ...typography.labelSm,
     color: colors.onSurfaceVariant,
-  },
-  error: {
-    ...typography.bodySm,
-    color: colors.error,
   },
 });

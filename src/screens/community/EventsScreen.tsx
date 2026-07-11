@@ -9,6 +9,7 @@ import { Card } from '../../components/ui/Card';
 import { CommunityStackParamList, CommunityTabParamList } from '../../navigation/types';
 import { CommunityEvent, getEvents } from '../../services/communityService';
 import { colors, spacing, typography } from '../../theme';
+import { communityStyles } from './communityStyles';
 
 interface Props {
   navigation: CompositeNavigationProp<
@@ -53,20 +54,20 @@ export function EventsScreen({ navigation }: Props) {
     <ScreenLayout
       keyboardAvoiding={false}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.primary} />}
-      scrollContentStyle={styles.content}
+      scrollContentStyle={communityStyles.content}
     >
-      <View style={styles.header}>
-        <Text style={styles.eyebrow}>Community</Text>
-        <Text style={styles.headline}>Events</Text>
+      <View style={communityStyles.header}>
+        <Text style={communityStyles.eyebrow}>Community</Text>
+        <Text style={communityStyles.headline}>Events</Text>
       </View>
 
       {loading ? <ActivityIndicator color={colors.primary} /> : null}
-      {error ? <Text style={styles.error}>{error}</Text> : null}
+      {error ? <Text style={communityStyles.error}>{error}</Text> : null}
 
       {!loading && events.length === 0 ? (
-        <Card style={styles.emptyCard}>
-          <Text style={styles.cardTitle}>No events yet</Text>
-          <Text style={styles.cardBody}>Upcoming gatherings will appear here once they are published.</Text>
+        <Card style={communityStyles.emptyCard}>
+          <Text style={communityStyles.cardTitle}>No events yet</Text>
+          <Text style={communityStyles.cardBody}>Upcoming gatherings will appear here once they are published.</Text>
         </Card>
       ) : null}
 
@@ -93,8 +94,8 @@ function EventSection({
   }
 
   return (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
+    <View style={communityStyles.section}>
+      <Text style={communityStyles.sectionTitle}>{title}</Text>
       {events.map((event) => (
         <TouchableOpacity
           activeOpacity={0.9}
@@ -111,8 +112,8 @@ function EventSection({
             )}
             <View style={styles.cardText}>
               <Text style={styles.eventDate}>{formatDate(event.eventDate)}</Text>
-              <Text style={styles.cardTitle}>{event.title}</Text>
-              <Text style={styles.cardBody}>
+              <Text style={communityStyles.cardTitle}>{event.title}</Text>
+              <Text style={communityStyles.cardBody}>
                 {event.location ?? 'Location TBD'} | {event.durationMinutes} min
               </Text>
             </View>
@@ -143,49 +144,24 @@ function buildInitials(title: string) {
 }
 
 const styles = StyleSheet.create({
-  content: {
-    gap: spacing.lg,
-  },
-  header: {
-    gap: spacing.xs,
-  },
-  eyebrow: {
-    ...typography.labelSm,
-    color: colors.goldDark,
-    textTransform: 'uppercase',
-  },
-  headline: {
-    ...typography.headlineLg,
-    color: colors.primaryDark,
-  },
-  section: {
-    gap: spacing.md,
-  },
-  sectionTitle: {
-    ...typography.headlineMd,
-    color: colors.primaryDark,
-  },
   card: {
     padding: spacing.md,
     flexDirection: 'row',
     gap: spacing.md,
+    alignItems: 'flex-start',
     shadowOpacity: 0.06,
   },
-  emptyCard: {
-    padding: spacing.md,
-    gap: spacing.sm,
-  },
   placeholder: {
-    width: 64,
-    height: 64,
+    width: 60,
+    height: 60,
     borderRadius: 12,
     backgroundColor: colors.primaryContainer,
     alignItems: 'center',
     justifyContent: 'center',
   },
   coverImage: {
-    width: 64,
-    height: 64,
+    width: 60,
+    height: 60,
     borderRadius: 12,
     backgroundColor: colors.surfaceContainer,
   },
@@ -195,23 +171,12 @@ const styles = StyleSheet.create({
   },
   cardText: {
     flex: 1,
+    flexShrink: 1,
     gap: spacing.xs,
+    minWidth: 0,
   },
   eventDate: {
     ...typography.labelSm,
     color: colors.goldDark,
-  },
-  cardTitle: {
-    ...typography.bodyMd,
-    color: colors.primaryDark,
-    fontFamily: 'Inter_600SemiBold',
-  },
-  cardBody: {
-    ...typography.bodySm,
-    color: colors.onSurfaceVariant,
-  },
-  error: {
-    ...typography.bodySm,
-    color: colors.error,
   },
 });

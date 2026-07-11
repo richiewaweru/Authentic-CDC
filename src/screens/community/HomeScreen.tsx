@@ -15,6 +15,7 @@ import {
   getUpcomingEvents,
 } from '../../services/communityService';
 import { colors, spacing, typography } from '../../theme';
+import { communityStyles } from './communityStyles';
 
 type Navigation = CompositeNavigationProp<
   BottomTabNavigationProp<CommunityTabParamList, 'Home'>,
@@ -63,15 +64,15 @@ export function HomeScreen({ navigation }: Props) {
 
   return (
     <ScreenLayout
-      scrollContentStyle={styles.content}
+      scrollContentStyle={communityStyles.content}
       keyboardAvoiding={false}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.primary} />
       }
     >
-      <View style={styles.header}>
-        <Text style={styles.eyebrow}>Community</Text>
-        <Text style={styles.headline}>Home</Text>
+      <View style={communityStyles.header}>
+        <Text style={communityStyles.eyebrow}>Community</Text>
+        <Text style={communityStyles.headline}>Home</Text>
       </View>
 
       <GradientHero variant="sand" style={styles.hero}>
@@ -85,28 +86,28 @@ export function HomeScreen({ navigation }: Props) {
         <Card elevated style={styles.nextStepCard}>
           <View style={styles.priorityBar} />
           <Text style={styles.nextStepLabel}>Next Step</Text>
-          <Text style={styles.cardTitle}>Continue your Foundations path</Text>
-          <Text style={styles.cardBody}>
+          <Text style={communityStyles.cardTitle}>Continue your Foundations path</Text>
+          <Text style={communityStyles.cardBody}>
             Read the next reflection and keep building your community rhythm.
           </Text>
         </Card>
       </TouchableOpacity>
 
       {loading ? <ActivityIndicator color={colors.primary} /> : null}
-      {error ? <Text style={styles.error}>{error}</Text> : null}
+      {error ? <Text style={communityStyles.error}>{error}</Text> : null}
 
       {!loading && announcements.length === 0 && events.length === 0 ? (
-        <Card style={styles.card}>
-          <Text style={styles.cardTitle}>Welcome to the community.</Text>
-          <Text style={styles.cardBody}>
+        <Card style={communityStyles.emptyCard} testID="community-home-empty-card">
+          <Text style={communityStyles.cardTitle}>Welcome to the community.</Text>
+          <Text style={communityStyles.cardBody}>
             Stay tuned - your first announcements and events are coming soon.
           </Text>
         </Card>
       ) : null}
 
       {announcements.length > 0 ? (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Announcements</Text>
+        <View style={communityStyles.section}>
+          <Text style={communityStyles.sectionTitle}>Announcements</Text>
           {announcements.map((announcement) => (
             <AnnouncementCard announcement={announcement} key={announcement.id} />
           ))}
@@ -114,9 +115,9 @@ export function HomeScreen({ navigation }: Props) {
       ) : null}
 
       {events.length > 0 ? (
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Upcoming Events</Text>
+        <View style={communityStyles.section}>
+          <View style={communityStyles.sectionHeader}>
+            <Text style={communityStyles.sectionTitle}>Upcoming Events</Text>
             <TouchableOpacity onPress={() => navigation.navigate('Events')}>
               <Text style={styles.link}>See all events</Text>
             </TouchableOpacity>
@@ -129,8 +130,8 @@ export function HomeScreen({ navigation }: Props) {
             >
               <Card style={styles.eventCard}>
                 <Text style={styles.eventDate}>{formatDate(event.eventDate)}</Text>
-                <Text style={styles.cardTitle}>{event.title}</Text>
-                <Text style={styles.cardBody}>{event.location ?? 'Location TBD'}</Text>
+                <Text style={communityStyles.cardTitle}>{event.title}</Text>
+                <Text style={communityStyles.cardBody}>{event.location ?? 'Location TBD'}</Text>
               </Card>
             </TouchableOpacity>
           ))}
@@ -146,10 +147,10 @@ function AnnouncementCard({ announcement }: { announcement: Announcement }) {
       <View style={[styles.toneBar, { backgroundColor: toneColor(announcement.tone) }]} />
       <View style={styles.cardContent}>
         <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle}>{announcement.title}</Text>
+          <Text style={communityStyles.cardTitle}>{announcement.title}</Text>
           {announcement.pinned ? <Text style={styles.pin}>Pinned</Text> : null}
         </View>
-        <Text style={styles.cardBody}>{announcement.body}</Text>
+        <Text style={communityStyles.cardBody}>{announcement.body}</Text>
       </View>
     </Card>
   );
@@ -178,15 +179,10 @@ function formatDate(value: string) {
 }
 
 const styles = StyleSheet.create({
-  content: {
-    gap: spacing.lg,
-  },
-  header: {
-    gap: spacing.xs,
-  },
   hero: {
-    minHeight: 132,
+    minHeight: 124,
     gap: spacing.sm,
+    padding: spacing.lg,
   },
   heroTitle: {
     ...typography.headlineMd,
@@ -197,27 +193,6 @@ const styles = StyleSheet.create({
     color: colors.onSurfaceVariant,
     maxWidth: 280,
   },
-  eyebrow: {
-    ...typography.labelSm,
-    color: colors.goldDark,
-    textTransform: 'uppercase',
-  },
-  headline: {
-    ...typography.headlineLg,
-    color: colors.primaryDark,
-  },
-  section: {
-    gap: spacing.md,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  sectionTitle: {
-    ...typography.headlineMd,
-    color: colors.primaryDark,
-  },
   link: {
     ...typography.labelSm,
     color: colors.primary,
@@ -227,13 +202,15 @@ const styles = StyleSheet.create({
   },
   eventCard: {
     padding: spacing.md,
-    gap: spacing.xs,
+    gap: spacing.sm,
   },
   nextStepCard: {
-    padding: spacing.md,
+    padding: spacing.lg,
     paddingLeft: spacing.lg,
-    gap: spacing.xs,
+    gap: spacing.sm,
     overflow: 'hidden',
+    minHeight: 112,
+    justifyContent: 'center',
   },
   priorityBar: {
     position: 'absolute',
@@ -256,7 +233,7 @@ const styles = StyleSheet.create({
     left: 0,
   },
   cardContent: {
-    padding: spacing.md,
+    padding: spacing.lg,
     paddingLeft: spacing.lg,
     gap: spacing.sm,
   },
@@ -266,16 +243,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: spacing.md,
   },
-  cardTitle: {
-    ...typography.bodyMd,
-    color: colors.primaryDark,
-    fontFamily: 'Inter_600SemiBold',
-    flexShrink: 1,
-  },
-  cardBody: {
-    ...typography.bodySm,
-    color: colors.onSurfaceVariant,
-  },
   pin: {
     ...typography.labelSm,
     color: colors.goldDark,
@@ -283,9 +250,5 @@ const styles = StyleSheet.create({
   eventDate: {
     ...typography.labelSm,
     color: colors.goldDark,
-  },
-  error: {
-    ...typography.bodySm,
-    color: colors.error,
   },
 });
