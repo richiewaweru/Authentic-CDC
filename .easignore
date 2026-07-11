@@ -42,11 +42,8 @@ yarn-error.*
 /android
 
 # Ignore files and directories that EAS Build doesn't need
-AGENTS.md
-CLAUDE.md
-README.md
+*.md
 LICENSE
-SUPABASE_AUTH_SETUP.md
 __tests__/
 jest.config.js
 supabase/
