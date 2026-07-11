@@ -9,36 +9,22 @@ import { Card } from '../../components/ui/Card';
 import { ScreenHeader } from '../../components/ui/ScreenHeader';
 import { CONFIRMATION_FEE } from '../../constants/fees';
 import { BookingStackParamList } from '../../navigation/types';
-import { getSlotDataSource } from '../../config/env';
 import { supabase } from '../../config/supabase';
+import { EMAIL_TRIGGERS_ENABLED } from '../../services/memberEmailService';
 import { bookSlot } from '../../services/slotService';
 import { useAuthStore } from '../../stores/authStore';
 import { colors, spacing, typography } from '../../theme';
 import { confirmDialog, showErrorDialog, showInfoDialog } from '../../utils/dialogs';
-import { addMinutesToTime, formatSlotDate, formatSlotTime, timeTo24Hour } from '../../utils/date';
+import {
+  addMinutesToTime,
+  formatDateForEmail,
+  formatSlotDate,
+  formatSlotTime,
+  formatTimeForEmail,
+  timeTo24Hour,
+} from '../../utils/date';
 
 type Props = NativeStackScreenProps<BookingStackParamList, 'ConfirmBooking'>;
-const EMAIL_TRIGGERS_ENABLED = getSlotDataSource() === 'supabase';
-
-function formatDateForEmail(slotDate: string): string {
-  const [year, month, day] = slotDate.split('-').map(Number);
-  return new Date(year, month - 1, day).toLocaleDateString('en-US', {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-  });
-}
-
-function formatTimeForEmail(slotTime: string): string {
-  if (slotTime.includes('AM') || slotTime.includes('PM')) {
-    return slotTime;
-  }
-
-  const [hour, minute] = slotTime.slice(0, 5).split(':').map(Number);
-  const period = hour >= 12 ? 'PM' : 'AM';
-  const hours12 = hour % 12 || 12;
-  return `${hours12}:${String(minute).padStart(2, '0')} ${period}`;
-}
 
 function buildGoogleCalendarUrl(params: {
   guideName: string;

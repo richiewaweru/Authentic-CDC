@@ -66,6 +66,10 @@ jest.mock('../src/services/slotService', () => ({
   releaseSlot: jest.fn(),
 }));
 
+jest.mock('../src/services/memberEmailService', () => ({
+  sendBookingCancellationEmail: jest.fn(),
+}));
+
 describe('booking screens', () => {
   beforeEach(() => {
     jest.useFakeTimers();

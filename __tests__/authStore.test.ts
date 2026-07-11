@@ -21,17 +21,27 @@ jest.mock('../src/services/slotService', () => ({
   releaseSlot: jest.fn(),
 }));
 
+jest.mock('../src/services/memberEmailService', () => ({
+  sendBookingCancellationEmail: jest.fn(),
+}));
+
 import { mockGuides } from '../src/mocks/guides';
 import { mockSlots } from '../src/mocks/slots';
+import { sendBookingCancellationEmail } from '../src/services/memberEmailService';
 import { releaseSlot } from '../src/services/slotService';
 import { useAuthStore } from '../src/stores/authStore';
 
 const mockedReleaseSlot = releaseSlot as jest.MockedFunction<typeof releaseSlot>;
+const mockedSendBookingCancellationEmail = sendBookingCancellationEmail as jest.MockedFunction<
+  typeof sendBookingCancellationEmail
+>;
 
 describe('useAuthStore', () => {
   beforeEach(() => {
     mockedReleaseSlot.mockReset();
+    mockedSendBookingCancellationEmail.mockReset();
     useAuthStore.setState({
+      user: null,
       bookingSelection: null,
       confirmedBooking: null,
     });
@@ -42,6 +52,12 @@ describe('useAuthStore', () => {
     const slot = mockSlots[0];
 
     useAuthStore.setState({
+      user: {
+        id: 'user-1',
+        email: 'ada@example.com',
+        displayName: 'Ada Member',
+        providers: [],
+      },
       bookingSelection: {
         guide,
         slot,
@@ -58,6 +74,13 @@ describe('useAuthStore', () => {
     await useAuthStore.getState().rescheduleBooking();
 
     expect(mockedReleaseSlot).toHaveBeenCalledWith(slot.id, 'Member rescheduled');
+    expect(mockedSendBookingCancellationEmail).toHaveBeenCalledWith({
+      userEmail: 'ada@example.com',
+      firstName: 'Ada',
+      guideName: guide.name,
+      slotDate: expect.any(String),
+      slotTime: slot.time,
+    });
     expect(useAuthStore.getState().bookingSelection).toBeNull();
     expect(useAuthStore.getState().confirmedBooking).toBeNull();
   });

@@ -9,10 +9,16 @@ import { Card } from '../../components/ui/Card';
 import { GuideCard } from '../../components/ui/GuideCard';
 import { ScreenHeader } from '../../components/ui/ScreenHeader';
 import { BookingStackParamList } from '../../navigation/types';
+import { sendBookingCancellationEmail } from '../../services/memberEmailService';
 import { releaseSlot } from '../../services/slotService';
 import { useAuthStore } from '../../stores/authStore';
 import { colors, spacing, typography } from '../../theme';
-import { formatSlotDate, formatSlotTime } from '../../utils/date';
+import {
+  formatDateForEmail,
+  formatSlotDate,
+  formatSlotTime,
+  formatTimeForEmail,
+} from '../../utils/date';
 import { confirmDialog, showErrorDialog } from '../../utils/dialogs';
 
 type Props = NativeStackScreenProps<BookingStackParamList, 'PendingHome'>;
@@ -114,7 +120,22 @@ export function PendingHomeScreen({ navigation }: Props) {
             setCancelling(true);
             void (async () => {
               try {
+                const bookingSnapshot = {
+                  userEmail: user?.email ?? '',
+                  firstName:
+                    user?.displayName?.split(' ')[0] ?? user?.email?.split('@')[0] ?? 'there',
+                  guideName: booking.guide.name,
+                  slotDate: formatDateForEmail(booking.slot.date),
+                  slotTime: formatTimeForEmail(booking.slot.time),
+                };
+
                 await releaseSlot(booking.slotId!);
+                const emailPromise = sendBookingCancellationEmail(bookingSnapshot);
+
+                if (emailPromise) {
+                  void emailPromise.catch((err) => console.error('Cancellation email failed:', err));
+                }
+
                 clearBooking();
                 navigation.navigate('ProfileReady');
               } catch (error) {

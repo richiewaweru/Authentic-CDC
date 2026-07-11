@@ -5,9 +5,11 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 
 import { clearOnboardingProgress } from '../lib/onboardingStorage';
 import { authService, mapSupabaseUser } from '../services/authService';
+import { sendBookingCancellationEmail } from '../services/memberEmailService';
 import { releaseSlot } from '../services/slotService';
 import { BookingRecord, BookingSelection } from '../types/booking';
 import type { AuthUser, ProfileStatus, UserState } from '../types/auth';
+import { formatDateForEmail, formatTimeForEmail } from '../utils/date';
 
 interface AuthState {
   hasHydrated: boolean;
@@ -106,13 +108,29 @@ export const useAuthStore = create<AuthState>()(
       clearBooking: () => set({ bookingSelection: null, confirmedBooking: null }),
       rescheduleBooking: async () => {
         const booking = get().confirmedBooking;
+        const user = get().user;
 
         if (!booking) {
           return;
         }
 
         if (booking.slotId) {
+          const bookingSnapshot = {
+            userEmail: user?.email ?? '',
+            firstName: user?.displayName?.split(' ')[0] ?? user?.email?.split('@')[0] ?? 'there',
+            guideName: booking.guide.name,
+            slotDate: formatDateForEmail(booking.slot.date),
+            slotTime: formatTimeForEmail(booking.slot.time),
+          };
+
           await releaseSlot(booking.slotId, 'Member rescheduled');
+          const emailPromise = sendBookingCancellationEmail(bookingSnapshot);
+
+          if (emailPromise) {
+            void emailPromise.catch((err) =>
+              console.error('Reschedule cancellation email failed:', err),
+            );
+          }
         }
 
         set({ confirmedBooking: null, bookingSelection: null });

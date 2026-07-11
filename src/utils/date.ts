@@ -122,6 +122,12 @@ export const formatSlotDate = (date: string) => longDateFormatter.format(parseSl
 
 export const formatSlotDateLong = formatSlotDate;
 
+export const formatDateForEmail = formatSlotDate;
+
+export function formatTimeForEmail(slotTime: string): string {
+  return formatSlotTime(slotTime);
+}
+
 export const getNextWeekdays = (count: number) => {
   const dates: string[] = [];
   const cursor = new Date();
