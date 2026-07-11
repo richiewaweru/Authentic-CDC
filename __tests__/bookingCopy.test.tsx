@@ -35,6 +35,7 @@ const mockStoreState = {
   bookingSelection: null as any,
   confirmedBooking: null as any,
   confirmBooking: jest.fn(),
+  clearBooking: jest.fn(),
   rescheduleBooking: jest.fn(),
   setBookingSelection: jest.fn(),
   signOut: jest.fn(),
@@ -69,7 +70,7 @@ import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { supabase } from '../src/config/supabase';
 import { mockGuides } from '../src/mocks/guides';
 import { mockSlots } from '../src/mocks/slots';
-import { bookSlot } from '../src/services/slotService';
+import { bookSlot, releaseSlot } from '../src/services/slotService';
 import { ConfirmBookingScreen } from '../src/screens/booking/ConfirmBookingScreen';
 import { PendingHomeScreen } from '../src/screens/booking/PendingHomeScreen';
 import { ProfileReadyScreen } from '../src/screens/booking/ProfileReadyScreen';
@@ -77,6 +78,7 @@ import { ProfileReadyScreen } from '../src/screens/booking/ProfileReadyScreen';
 describe('booking copy updates', () => {
   const mockInvoke = supabase.functions.invoke as jest.Mock;
   const mockBookSlot = bookSlot as jest.Mock;
+  const mockReleaseSlot = releaseSlot as jest.Mock;
   let consoleErrorSpy: jest.SpyInstance;
   let consoleWarnSpy: jest.SpyInstance;
   let alertSpy: jest.SpyInstance;
@@ -88,6 +90,7 @@ describe('booking copy updates', () => {
     mockStoreState.bookingSelection = null;
     mockStoreState.confirmedBooking = null;
     mockStoreState.confirmBooking.mockReset();
+    mockStoreState.clearBooking.mockReset();
     mockStoreState.rescheduleBooking.mockReset();
     mockStoreState.setBookingSelection.mockReset();
     mockStoreState.signOut.mockReset();
@@ -97,6 +100,7 @@ describe('booking copy updates', () => {
       meetingLink: null,
       startsAt: '2026-06-20T14:00:00.000Z',
     });
+    mockReleaseSlot.mockReset().mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -276,6 +280,49 @@ describe('booking copy updates', () => {
     await waitFor(() => {
       expect(mockStoreState.confirmBooking).toHaveBeenCalledTimes(1);
       expect(navigate).toHaveBeenCalledWith('BookingConfirmed');
+    });
+  });
+
+  it('fires a cancellation email after cancel releases the slot', async () => {
+    const navigate = jest.fn();
+    mockStoreState.confirmedBooking = {
+      guide: mockGuides[0],
+      slot: {
+        ...mockSlots[0],
+        date: '2026-06-20',
+        time: '10:00 AM',
+      },
+      endTime: '10:30 AM',
+      slotId: 'slot-1',
+      status: 'confirmed',
+    };
+
+    render(
+      <PendingHomeScreen
+        navigation={{ goBack: jest.fn(), navigate } as never}
+        route={{ key: 'PendingHome-test', name: 'PendingHome' } as never}
+      />,
+    );
+
+    fireEvent.press(require('@testing-library/react-native').screen.getByText('Cancel Booking'));
+
+    const cancelButtons = alertSpy.mock.calls[0]?.[2];
+    await cancelButtons?.[1]?.onPress?.();
+
+    await waitFor(() => {
+      expect(mockReleaseSlot).toHaveBeenCalledWith('slot-1');
+      expect(mockInvoke).toHaveBeenCalledWith('send-member-email', {
+        body: {
+          type: 'booking_cancelled',
+          userEmail: 'ada@example.com',
+          firstName: 'Ada',
+          guideName: mockGuides[0].name,
+          slotDate: 'Saturday, June 20',
+          slotTime: '10:00 AM',
+        },
+      });
+      expect(mockStoreState.clearBooking).toHaveBeenCalledTimes(1);
+      expect(navigate).toHaveBeenCalledWith('ProfileReady');
     });
   });
 

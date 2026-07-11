@@ -203,128 +203,32 @@ async function bookSlotInSupabase(slotId: string): Promise<BookSlotResult> {
     throw new Error('You must be signed in to book a time.');
   }
 
-  const { data: slot, error: slotError } = await supabase
-    .from('available_slots')
-    .select('id, guide_id, slot_date, slot_time, starts_at, duration_minutes, status')
-    .eq('id', slotId)
-    .single();
+  const { data, error } = await supabase.rpc('book_my_slot', { p_slot_id: slotId });
 
-  if (slotError || !slot) {
-    console.error('Failed to load slot before booking:', slotError);
-    throw new Error('That time slot could not be found.');
-  }
+  if (error) {
+    console.error('book_my_slot failed:', error);
 
-  if (slot.status !== 'open') {
-    throw new Error('That time is no longer available. Please choose another.');
-  }
+    if (error.code === 'P0002') {
+      throw new Error('That time is no longer available. Please choose another.');
+    }
 
-  const { data: activeBooking, error: activeBookingError } = await supabase
-    .from('bookings')
-    .select('id')
-    .eq('user_id', user.id)
-    .eq('status', 'confirmed')
-    .limit(1)
-    .maybeSingle();
-
-  if (activeBookingError) {
-    console.error('Failed to check for an active booking:', activeBookingError);
-    throw new Error('Could not confirm whether this time is still available.');
-  }
-
-  if (activeBooking) {
-    throw new Error(
-      'You already have an upcoming conversation booked. Cancel it first to book a different time.',
-    );
-  }
-
-  const { data: anyBooking, error: anyBookingError } = await supabase
-    .from('bookings')
-    .select('id')
-    .eq('slot_id', slotId)
-    .eq('status', 'confirmed')
-    .limit(1)
-    .maybeSingle();
-
-  if (anyBookingError) {
-    console.error('Failed to check whether the slot is already taken:', anyBookingError);
-    throw new Error('Could not confirm whether this time is still available.');
-  }
-
-  if (anyBooking) {
-    throw new Error('This time has just been booked by someone else. Please choose another.');
-  }
-
-  const { data: freshSlot, error: freshSlotError } = await supabase
-    .from('available_slots')
-    .select('status')
-    .eq('id', slotId)
-    .single();
-
-  if (freshSlotError) {
-    console.error('Failed to re-check slot availability:', freshSlotError);
-    throw new Error('Could not confirm whether this time is still available.');
-  }
-
-  if (!freshSlot || freshSlot.status !== 'open') {
-    throw new Error('This time was just taken. Please choose another.');
-  }
-
-  const { error: bookingError } = await supabase.from('bookings').insert({
-    user_id: user.id,
-    guide_id: slot.guide_id,
-    slot_id: slotId,
-    slot_date: slot.slot_date,
-    slot_time: slot.slot_time,
-    duration_minutes: slot.duration_minutes ?? 30,
-    status: 'confirmed',
-    payment_status: 'pending',
-    amount_paid: 0,
-    currency: 'usd',
-  });
-
-  if (bookingError) {
-    console.error('Failed to create booking:', bookingError);
-
-    if (bookingError.code === '23505') {
+    if (error.code === '23505') {
       throw new Error('This time has just been booked by someone else. Please choose another.');
+    }
+
+    if (error.code === 'P0001') {
+      throw new Error('You already have an upcoming conversation booked.');
     }
 
     throw new Error('Could not complete your booking. Please try again.');
   }
 
-  const { error: slotUpdateError } = await supabase
-    .from('available_slots')
-    .update({
-      status: 'booked',
-      booked_by: user.id,
-      booked_at: new Date().toISOString(),
-    })
-    .eq('id', slotId)
-    .eq('status', 'open');
-
-  if (slotUpdateError) {
-    console.error('Failed to mark slot as booked:', slotUpdateError);
-  }
-
-  const { data: confirmedBooking, error: confirmedBookingError } = await supabase
-    .from('bookings')
-    .select('id, meeting_link')
-    .eq('user_id', user.id)
-    .eq('slot_id', slotId)
-    .eq('status', 'confirmed')
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (confirmedBookingError) {
-    console.error('Failed to fetch booking after creation:', confirmedBookingError);
-    throw new Error('Could not complete your booking. Please try again.');
-  }
+  const row = Array.isArray(data) ? data[0] : data;
 
   return {
-    bookingId: confirmedBooking?.id ?? '',
-    meetingLink: confirmedBooking?.meeting_link ?? null,
-    startsAt: slot.starts_at ?? null,
+    bookingId: row?.booking_id ?? '',
+    meetingLink: row?.meeting_link ?? null,
+    startsAt: row?.starts_at ?? null,
   };
 }
 
